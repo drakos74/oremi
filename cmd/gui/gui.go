@@ -1,17 +1,18 @@
 package main
 
 import (
+	"log"
+
+	"github/drakos74/oremi/internal/canvas/entity"
+	"github/drakos74/oremi/internal/source/generator"
+
+	"gioui.org/app"
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
-	"log"
-	"oremi/internal/canvas/entity"
-	"oremi/internal/source/generator"
-
-	"gioui.org/app"
 )
 
 const (

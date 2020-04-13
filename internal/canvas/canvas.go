@@ -2,12 +2,13 @@ package canvas
 
 import (
 	"fmt"
+	"reflect"
+
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/widget/material"
 	"github.com/google/uuid"
-	"reflect"
 )
 
 type Element interface {

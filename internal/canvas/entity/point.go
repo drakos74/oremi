@@ -2,12 +2,13 @@ package entity
 
 import (
 	"fmt"
+	"github/drakos74/oremi/internal/canvas"
+
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
 	"gioui.org/unit"
 	"gioui.org/widget/material"
-	"oremi/internal/canvas"
 )
 
 type Point struct {

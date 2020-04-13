@@ -1,0 +1,51 @@
+# gioui.org v0.0.0-20200403084947-efce78d414f3
+gioui.org/app
+gioui.org/app/internal/d3d11
+gioui.org/app/internal/egl
+gioui.org/app/internal/glimpl
+gioui.org/app/internal/log
+gioui.org/app/internal/srgb
+gioui.org/app/internal/window
+gioui.org/app/internal/windows
+gioui.org/app/internal/xkb
+gioui.org/f32
+gioui.org/font
+gioui.org/gesture
+gioui.org/gpu
+gioui.org/gpu/backend
+gioui.org/gpu/gl
+gioui.org/internal/f32color
+gioui.org/internal/fling
+gioui.org/internal/opconst
+gioui.org/internal/ops
+gioui.org/internal/path
+gioui.org/internal/unsafe
+gioui.org/io/event
+gioui.org/io/key
+gioui.org/io/pointer
+gioui.org/io/profile
+gioui.org/io/router
+gioui.org/io/system
+gioui.org/layout
+gioui.org/op
+gioui.org/op/clip
+gioui.org/op/paint
+gioui.org/text
+gioui.org/unit
+gioui.org/widget
+gioui.org/widget/material
+# github.com/google/uuid v1.1.1
+github.com/google/uuid
+# golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
+golang.org/x/exp/shiny/iconvg
+golang.org/x/exp/shiny/iconvg/internal/gradient
+golang.org/x/exp/shiny/materialdesign/icons
+# golang.org/x/image v0.0.0-20190802002840-cff245a6509b
+golang.org/x/image/font
+golang.org/x/image/math/f32
+golang.org/x/image/math/f64
+golang.org/x/image/math/fixed
+golang.org/x/image/vector
+# golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9
+golang.org/x/sys/unix
+golang.org/x/sys/windows

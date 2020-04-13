@@ -2,11 +2,12 @@ package entity
 
 import (
 	"fmt"
+	"github/drakos74/oremi/internal/canvas"
+	"github/drakos74/oremi/internal/model"
+
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"github.com/google/uuid"
-	"oremi/internal/canvas"
-	"oremi/internal/model"
 )
 
 const scale = 1000

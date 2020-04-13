@@ -2,7 +2,7 @@ package generator
 
 import (
 	"fmt"
-	"oremi/internal/model"
+	"github/drakos74/oremi/internal/model"
 	"testing"
 )
 

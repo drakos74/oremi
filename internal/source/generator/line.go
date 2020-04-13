@@ -1,6 +1,6 @@
 package generator
 
-import "oremi/internal/model"
+import "github/drakos74/oremi/internal/model"
 
 type LinearSeries struct {
 	model.Series

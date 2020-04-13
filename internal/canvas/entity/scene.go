@@ -1,11 +1,12 @@
 package entity
 
 import (
+	"github/drakos74/oremi/internal/canvas"
+
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/widget/material"
-	"oremi/internal/canvas"
 )
 
 type Scene struct {
