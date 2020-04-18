@@ -1,25 +1,54 @@
-package pkg
+package bench
 
 import (
 	"bufio"
 	"fmt"
+	"github/drakos74/oremi/internal/data/model"
 	"os"
 	"strconv"
 	"strings"
 )
 
+const (
+	operations = "ops"
+	latency    = "ns/op"
+	throughput = "B/op"
+	heap       = "allocs/op"
+)
+
+type Benchmarks []Benchmark
+
 type Benchmark struct {
-	name       string
-	operations int
-	// ns/op
-	latency float64
-	// B/op
-	throughput float64
-	// allocs/op
-	heap float64
+	labels []string
+	// numeric labels
+	numLabels map[string]float64
 }
 
-func ParseBenchmarks(f string) ([]Benchmark, error) {
+func (b Benchmark) Latency() float64 {
+	return b.numLabels[latency]
+}
+
+func (b Benchmark) Operations() float64 {
+	return b.numLabels[operations]
+}
+
+func (b Benchmark) Throughput() float64 {
+	return b.numLabels[throughput]
+}
+
+func (b Benchmark) Heap() float64 {
+	return b.numLabels[heap]
+}
+
+func (b Benchmarks) ToCollection() model.Collection {
+	series := model.NewSeries(2)
+	for _, benchmark := range b {
+		series.Add(model.NewVector(fmt.Sprintf("%v", benchmark.labels), benchmark.Latency(), benchmark.Operations()))
+	}
+	return series
+}
+
+func ParseBenchmarks(f string) (Benchmarks, error) {
 
 	var benchmarks []Benchmark
 
@@ -32,7 +61,7 @@ func ParseBenchmarks(f string) ([]Benchmark, error) {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		line := scanner.Text()
-		b, err := ParseBenchmark(line)
+		b, err := parseBenchmark(line)
 		if err == nil {
 			benchmarks = append(benchmarks, *b)
 		} else {
@@ -48,7 +77,7 @@ func ParseBenchmarks(f string) ([]Benchmark, error) {
 
 }
 
-func ParseBenchmark(line string) (*Benchmark, error) {
+func parseBenchmark(line string) (*Benchmark, error) {
 	parts := strings.Fields(line)
 
 	if isBenchmarkOutput(parts) {
@@ -62,11 +91,38 @@ func ParseBenchmark(line string) (*Benchmark, error) {
 func parseAsBenchmark(parts []string) *Benchmark {
 	ops, _ := strconv.Atoi(parts[1])
 	lat, _ := strconv.ParseFloat(parts[2], 64)
+
+	labels, numLabels := parseLabels(parts[0])
+
+	numLabels[latency] = lat
+	numLabels[operations] = float64(ops)
+
 	return &Benchmark{
-		name:       parts[0],
-		operations: ops,
-		latency:    lat,
+		labels:    labels,
+		numLabels: numLabels,
 	}
+}
+
+func parseLabels(str string) (labels []string, numLabels map[string]float64) {
+
+	labels = make([]string, 0)
+	numLabels = make(map[string]float64)
+
+	parts := strings.Split(str, "|")
+
+	for _, p := range parts {
+		label := strings.Split(p, ":")
+		if len(label) > 1 {
+			num, _ := strconv.ParseFloat(label[1], 64)
+			numLabels[label[0]] = num
+		} else {
+			labels = append(labels, label[0])
+		}
+
+	}
+
+	return
+
 }
 
 func isBenchmarkOutput(parts []string) bool {

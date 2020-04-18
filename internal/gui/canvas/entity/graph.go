@@ -15,7 +15,7 @@ const scale = 1000
 // Graph is a graph object designed to hold all the graph contents as child elements
 type Graph struct {
 	canvas.RawElement
-	Scene
+	Container
 	rect        *f32.Rectangle
 	max         *f32.Point
 	collections map[uint32]model.Collection
@@ -26,7 +26,7 @@ type Graph struct {
 func NewGraph(rect *f32.Rectangle) *Graph {
 	g := &Graph{
 		*canvas.NewRawElement(),
-		*NewScene(rect),
+		*NewContainer(rect),
 		rect,
 		&f32.Point{
 			X: 0,
@@ -42,7 +42,7 @@ func NewGraph(rect *f32.Rectangle) *Graph {
 
 // Event propagates the events to all child elements of the graph
 func (g *Graph) Event(e *pointer.Event) (bool, error) {
-	if g.Scene.IsActive() {
+	if g.Container.IsActive() {
 		p := f32.Point{
 			X: g.deScaleX(e.Position.X),
 			Y: g.deScaleY(e.Position.Y),
@@ -51,7 +51,7 @@ func (g *Graph) Event(e *pointer.Event) (bool, error) {
 		println(fmt.Sprintf("cursor=%v", p))
 	}
 
-	return g.Scene.Event(e)
+	return g.Container.Event(e)
 }
 
 // Point adds a point to the graph

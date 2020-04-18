@@ -47,7 +47,7 @@ func (s Series) Next() (point *LabeledPoint, ok, next bool) {
 				X: float32(p.Coords[0]),
 				Y: float32(p.Coords[1]),
 			},
-			Label: "",
+			Label: p.Label,
 		}, true, next
 	}
 	return nil, false, false

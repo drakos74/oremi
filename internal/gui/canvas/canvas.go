@@ -11,11 +11,23 @@ import (
 // Element is the main abstraction for any object living within the canvas
 type Element interface {
 	ID() uint32
+	Scale() (width, height float32)
+	Offset() (x, y float32)
 }
 
 // RawElement is the base implementation for an Element
 type RawElement struct {
-	id uint32
+	id     uint32
+	width  float32
+	height float32
+}
+
+func (s *RawElement) Scale() (width, height float32) {
+	return width, height
+}
+
+func (s *RawElement) Offset() (x, y float32) {
+	return x, y
 }
 
 // ID returns the id of the raw element
@@ -26,7 +38,9 @@ func (s *RawElement) ID() uint32 {
 // NewRawElement creates a new raw element
 func NewRawElement() *RawElement {
 	return &RawElement{
-		id: uuid.New().ID(),
+		id:     uuid.New().ID(),
+		width:  1000,
+		height: 1000,
 	}
 }
 

@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
 
 	"gioui.org/f32"
@@ -49,6 +50,7 @@ func (p *Point) Draw(gtx *layout.Context, th *material.Theme) error {
 		r = calculateRect(p.c, 2*p.w)
 		// TODO : fix show label on hover and remove println
 		th.Label(unit.Px(50), "text").Layout(gtx)
+		println(fmt.Sprintf("label=%v", p.label))
 	}
 	paint.PaintOp{Rect: r}.Add(gtx.Ops)
 
