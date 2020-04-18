@@ -6,5 +6,5 @@ A data guided approach on visualising and identifying patterns
 
 ## Demo
 
-check the [examples] (../master/examples/graph/graph.go)
+check the [examples] (.../master/examples/graph/graph.go)
 
