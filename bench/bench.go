@@ -11,22 +11,38 @@ import (
 )
 
 const (
-	operations = "ops"
-	latency    = "ns/op"
-	throughput = "B/op"
-	heap       = "allocs/op"
+	Operations = "ops"
+	Latency    = "ns/op"
+	Throughput = "B/op"
+	Heap       = "allocs/op"
 )
 
-// NewBenchmarkCollection creates a benchmark collection of data points from a benchmark output file
-// x - axis latency
-// y - axis operations
-func NewBenchmarkCollection(f string) (model.Collection, error) {
+// Benchmarks is a collection of Benchmark results
+type Benchmarks []Benchmark
 
+// Extract extracts Latency and operation information from the given benchmarks
+// x value to be used for the x-axis
+// y value to be used for the y-axis
+func (b Benchmarks) Extract(x, y string) model.Collection {
 	series := model.NewSeries(2)
+	for _, benchmark := range b {
+		x, hasX := benchmark.read(x)
+		y, hasY := benchmark.read(y)
+		if hasX && hasY {
+			series.Add(model.NewVector(fmt.Sprintf("%v", benchmark.labels), x, y))
+		}
+	}
+	return series
+}
+
+// New creates a collection of Benchmark items from a given becnhmark output file
+func New(f string) (Benchmarks, error) {
+
+	var benchmarks []Benchmark
 
 	file, err := os.Open(f)
 	if err != nil {
-		return series, err
+		return benchmarks, err
 	}
 	defer file.Close()
 
@@ -35,43 +51,50 @@ func NewBenchmarkCollection(f string) (model.Collection, error) {
 		line := scanner.Text()
 		b, err := tryParseBenchmark(line)
 		if err == nil {
-			series.Add(model.NewVector(fmt.Sprintf("%v", b.labels), b.Latency(), b.Operations()))
+			benchmarks = append(benchmarks, *b)
 		} else {
 			println(fmt.Sprintf("ignoring line %s : %v", line, err))
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return series, err
+		return benchmarks, err
 	}
 
-	return series, nil
+	return benchmarks, nil
 
 }
 
-type benchmark struct {
+type Benchmark struct {
 	labels []string
 	// numeric labels
 	numLabels map[string]float64
 }
 
-func (b benchmark) Latency() float64 {
-	return b.numLabels[latency]
+func (b Benchmark) read(numLabel string) (float64, bool) {
+	if a, ok := b.numLabels[numLabel]; ok {
+		return a, true
+	}
+	return 0, false
 }
 
-func (b benchmark) Operations() float64 {
-	return b.numLabels[operations]
+func (b Benchmark) Latency() (float64, bool) {
+	return b.read(Latency)
 }
 
-func (b benchmark) Throughput() float64 {
-	return b.numLabels[throughput]
+func (b Benchmark) Operations() (float64, bool) {
+	return b.read(Operations)
 }
 
-func (b benchmark) Heap() float64 {
-	return b.numLabels[heap]
+func (b Benchmark) Throughput() (float64, bool) {
+	return b.read(Throughput)
 }
 
-func tryParseBenchmark(line string) (*benchmark, error) {
+func (b Benchmark) Heap() (float64, bool) {
+	return b.read(Heap)
+}
+
+func tryParseBenchmark(line string) (*Benchmark, error) {
 	parts := strings.Fields(line)
 
 	if isBenchmarkOutput(parts) {
@@ -82,16 +105,25 @@ func tryParseBenchmark(line string) (*benchmark, error) {
 
 }
 
-func parseBenchmark(parts []string) *benchmark {
+func parseBenchmark(parts []string) *Benchmark {
+
 	ops, _ := strconv.Atoi(parts[1])
 	lat, _ := strconv.ParseFloat(parts[2], 64)
 
 	labels, numLabels := parseLabels(parts[0])
 
-	numLabels[latency] = lat
-	numLabels[operations] = float64(ops)
+	numLabels[Latency] = lat
+	numLabels[Operations] = float64(ops)
 
-	return &benchmark{
+	if hasAtIndex(5, Throughput, parts) {
+		numLabels[Throughput], _ = strconv.ParseFloat(parts[4], 64)
+	}
+
+	if hasAtIndex(7, Heap, parts) {
+		numLabels[Heap], _ = strconv.ParseFloat(parts[6], 64)
+	}
+
+	return &Benchmark{
 		labels:    labels,
 		numLabels: numLabels,
 	}
@@ -120,7 +152,7 @@ func parseLabels(str string) (labels []string, numLabels map[string]float64) {
 }
 
 func isBenchmarkOutput(parts []string) bool {
-	return hasAtIndex(3, "ns/op", parts)
+	return hasAtIndex(3, Latency, parts)
 }
 
 func hasAtIndex(index int, part string, parts []string) bool {
