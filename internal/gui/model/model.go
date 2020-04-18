@@ -15,6 +15,7 @@ type Collection interface {
 	Bounds() *f32.Rectangle
 	Next() (point *LabeledPoint, ok, next bool)
 	Size() int
+	Reset()
 }
 
 type Series struct {
@@ -50,4 +51,8 @@ func (s Series) Next() (point *LabeledPoint, ok, next bool) {
 		}, true, next
 	}
 	return nil, false, false
+}
+
+func (s Series) Reset() {
+	s.Collection.Reset()
 }

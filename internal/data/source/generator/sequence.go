@@ -14,7 +14,13 @@ type Sequence struct {
 }
 
 func (i *Sequence) Next() (vector model.Vector, ok, hasNext bool) {
-	next := i.f(i.current)
+	var next float64
+	if i.count == 0 {
+		next = i.start
+	} else {
+		next = i.f(i.current)
+	}
+	i.count++
 	i.current = next
 	return model.NewVector(fmt.Sprintf("%d", i.count), i.current), true, i.limit == 0 || i.current < i.limit
 }

@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"log"
+	"math"
 )
 
 // Series is a collection of vectors
@@ -16,7 +17,11 @@ type Series struct {
 
 // NewSeries creates a new series of the specified dimension
 func NewSeries(dim int) *Series {
-	return &Series{dim: dim, vectors: make([]Vector, 0), min: NewVector("min", make([]float64, dim)...), max: NewVector("max", make([]float64, dim)...)}
+	min := make([]float64, dim)
+	for i, _ := range min {
+		min[i] = math.MaxFloat64
+	}
+	return &Series{dim: dim, vectors: make([]Vector, 0), min: NewVector("min", min...), max: NewVector("max", make([]float64, dim)...)}
 }
 
 // Reset resets the iterator to the start of the collection

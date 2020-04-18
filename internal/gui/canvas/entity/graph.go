@@ -47,6 +47,7 @@ func (g *Graph) Event(e *pointer.Event) (bool, error) {
 			X: g.deScaleX(e.Position.X),
 			Y: g.deScaleY(e.Position.Y),
 		}
+		// TODO : remove or enable only with appropriate config or action
 		println(fmt.Sprintf("cursor=%v", p))
 	}
 
@@ -121,18 +122,19 @@ func (g *Graph) AddCollection(collection model.Collection) {
 
 	if doRecalc {
 		for sId, c := range g.collections {
-			println(fmt.Sprintf("del collection series %v", sId))
+			g.remove(sId)
 			g.add(sId, c)
 		}
 	}
 
-	g.add(uuid.New().ID(), collection)
+	sId := uuid.New().ID()
+	g.add(sId, collection)
+	g.collections[sId] = collection
 
 }
 
 // remove removes a collection and it's points
 func (g *Graph) remove(sId uint32) {
-	delete(g.collections, sId)
 	for _, pId := range g.points[sId] {
 		g.Remove(pId)
 	}
@@ -142,7 +144,7 @@ func (g *Graph) remove(sId uint32) {
 // add scales the model series into canvas coordinates scale
 func (g *Graph) add(sId uint32, collection model.Collection) {
 
-	println(fmt.Sprintf("add series %v", sId))
+	collection.Reset()
 	var points = make([]uint32, collection.Size())
 	i := 0
 	for {
@@ -163,6 +165,5 @@ func (g *Graph) add(sId uint32, collection model.Collection) {
 		}
 		i++
 	}
-	g.collections[sId] = collection
 	g.points[sId] = points
 }

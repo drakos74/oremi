@@ -1,9 +1,6 @@
 package canvas
 
 import (
-	"fmt"
-	"reflect"
-
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/layout"
@@ -85,8 +82,7 @@ type RawCompoundElement struct {
 
 // Add adds a new element to the group
 func (s *RawCompoundElement) Add(element Element) {
-	t := reflect.TypeOf(element)
-	println(fmt.Sprintf("type = %v", t))
+	//t := reflect.TypeOf(element)
 	// TODO : use to make better use of generic actions, without doing the casting
 	s.elements[element.ID()] = element
 }

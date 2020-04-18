@@ -4,7 +4,7 @@ import (
 	"github/drakos74/oremi/internal/data/model"
 )
 
-// Line is a collection of points adhering to a linear evolution model in 2D space
+// Line is a collection of points adhering to a graph evolution model in 2D space
 type Line model.Series
 
 // NewLine creates a new collection of a number of vectors forming a line

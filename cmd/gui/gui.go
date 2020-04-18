@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"github/drakos74/oremi/internal/data/source/generator"
 	"github/drakos74/oremi/internal/gui/canvas/entity"
 
 	"gioui.org/app"
@@ -43,21 +42,7 @@ func loop(w *app.Window) error {
 		Max: f32.Point{ww, hh},
 	})
 
-	g := f32.Rectangle{
-		Min: f32.Point{X: 50, Y: 50},
-		Max: f32.Point{X: ww * 95 / 100, Y: hh * 95 / 100},
-	}
-	graph := entity.NewGraph(&g)
-
-	scene.Add(graph)
-
-	l1 := generator.NewLine()
-	l1.Generate(10, 4, 4)
-	graph.AddCollection(l1)
-
-	l2 := generator.NewLine()
-	l2.Generate(10, 2, 4)
-	graph.AddCollection(l2)
+	// ... add you objects here ...
 
 	for {
 		select {
