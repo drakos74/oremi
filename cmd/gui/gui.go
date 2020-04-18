@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github/drakos74/oremi/internal/canvas/entity"
-	"github/drakos74/oremi/internal/source/generator"
+	"github/drakos74/oremi/internal/data/source/generator"
+	"github/drakos74/oremi/internal/gui/canvas/entity"
 
 	"gioui.org/app"
 	"gioui.org/f32"
@@ -20,7 +20,6 @@ const (
 	height = 800
 )
 
-// TODO : notice that we need to duplicate this ... seems some inconsistency with the library (?)
 var ww = float32(2 * width)
 var hh = float32(2 * height)
 

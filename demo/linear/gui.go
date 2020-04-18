@@ -1,10 +1,11 @@
 package main
 
 import (
+	"github/drakos74/oremi/internal/data/source/generator"
+	"github/drakos74/oremi/internal/gui/model"
 	"log"
 
-	"github/drakos74/oremi/internal/canvas/entity"
-	"github/drakos74/oremi/internal/source/generator"
+	"github/drakos74/oremi/internal/gui/canvas/entity"
 
 	"gioui.org/app"
 	"gioui.org/f32"
@@ -52,13 +53,12 @@ func loop(w *app.Window) error {
 
 	scene.Add(graph)
 
-	l1 := generator.NewLine()
-	l1.Generate(10, 4, 4)
-	graph.AddCollection(l1)
+	graph.AddCollection(model.NewSeries(generator.NewPolynomial(100, 0, 0.1, 0, 1)))
 
-	l2 := generator.NewLine()
-	l2.Generate(10, 2, 4)
-	graph.AddCollection(l2)
+	graph.AddCollection(model.NewSeries(generator.NewLine(50, 2, 0, 1)))
+	graph.AddCollection(model.NewSeries(generator.NewLine(50, 1, 0, 1)))
+
+	graph.AddCollection(model.NewSeries(generator.NewExponential(100, 0.1, 0.1)))
 
 	for {
 		select {

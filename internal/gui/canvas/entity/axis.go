@@ -1,7 +1,7 @@
 package entity
 
 import (
-	"github/drakos74/oremi/internal/canvas"
+	"github/drakos74/oremi/internal/gui/canvas"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -9,12 +9,14 @@ import (
 	"gioui.org/widget/material"
 )
 
+// Axis is an axis element for graphs
 type Axis struct {
 	canvas.RawElement
 	canvas.RawCompoundElement
 	rect f32.Rectangle
 }
 
+// NewAxisX creates a new x axis
 func NewAxisX(start f32.Point, length float32, delim int) *Axis {
 	axis := &Axis{
 		*canvas.NewRawElement(),
@@ -29,7 +31,7 @@ func NewAxisX(start f32.Point, length float32, delim int) *Axis {
 	}
 	for i := 0; i <= delim; i++ {
 		d := float32(i) / float32(delim)
-		axis.Add(NewXDelimiter(f32.Point{
+		axis.Add(NewDelimiterX(f32.Point{
 			X: axis.rect.Min.X + (axis.rect.Max.X-axis.rect.Min.X)*d,
 			Y: start.Y,
 		}))
@@ -37,6 +39,7 @@ func NewAxisX(start f32.Point, length float32, delim int) *Axis {
 	return axis
 }
 
+// NewAxisY creates a new y axis
 func NewAxisY(start f32.Point, length float32, delim int) *Axis {
 	axis := &Axis{
 		*canvas.NewRawElement(),
@@ -51,7 +54,7 @@ func NewAxisY(start f32.Point, length float32, delim int) *Axis {
 	}
 	for i := 0; i <= delim; i++ {
 		d := float32(i) / float32(delim)
-		axis.Add(NewYDelimiter(f32.Point{
+		axis.Add(NewDelimiterY(f32.Point{
 			X: start.X,
 			Y: axis.rect.Min.Y + (axis.rect.Max.Y-axis.rect.Min.Y)*d,
 		}))
@@ -59,6 +62,7 @@ func NewAxisY(start f32.Point, length float32, delim int) *Axis {
 	return axis
 }
 
+// Draw draws the axis
 func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
 	paint.PaintOp{Rect: a.rect}.Add(gtx.Ops)
 	_, err := a.Elements(canvas.DrawAction(gtx, th))
@@ -68,12 +72,14 @@ func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
 	return nil
 }
 
+// Delimiter is an axis child element representing a value on the respective axis
 type Delimiter struct {
 	canvas.RawElement
 	rect f32.Rectangle
 }
 
-func NewXDelimiter(p f32.Point) *Delimiter {
+// NewDelimiterX creates a new delimiter for an x axis
+func NewDelimiterX(p f32.Point) *Delimiter {
 	return &Delimiter{
 		*canvas.NewRawElement(),
 		f32.Rectangle{
@@ -89,7 +95,8 @@ func NewXDelimiter(p f32.Point) *Delimiter {
 	}
 }
 
-func NewYDelimiter(p f32.Point) *Delimiter {
+// NewDelimiterY creates a new delimiter for an x axis
+func NewDelimiterY(p f32.Point) *Delimiter {
 	return &Delimiter{
 		*canvas.NewRawElement(),
 		f32.Rectangle{
@@ -105,6 +112,7 @@ func NewYDelimiter(p f32.Point) *Delimiter {
 	}
 }
 
+// Draw draws the delimiter
 func (m *Delimiter) Draw(gtx *layout.Context, th *material.Theme) error {
 	paint.PaintOp{Rect: m.rect}.Add(gtx.Ops)
 	return nil

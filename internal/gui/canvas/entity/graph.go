@@ -2,8 +2,8 @@ package entity
 
 import (
 	"fmt"
-	"github/drakos74/oremi/internal/canvas"
-	"github/drakos74/oremi/internal/model"
+	"github/drakos74/oremi/internal/gui/canvas"
+	"github/drakos74/oremi/internal/gui/model"
 
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
@@ -12,6 +12,7 @@ import (
 
 const scale = 1000
 
+// Graph is a graph object designed to hold all the graph contents as child elements
 type Graph struct {
 	canvas.RawElement
 	Scene
@@ -21,6 +22,7 @@ type Graph struct {
 	points      map[uint32][]uint32
 }
 
+// NewGraph creates a new graph
 func NewGraph(rect *f32.Rectangle) *Graph {
 	g := &Graph{
 		*canvas.NewRawElement(),
@@ -38,6 +40,7 @@ func NewGraph(rect *f32.Rectangle) *Graph {
 	return g
 }
 
+// Event propagates the events to all child elements of the graph
 func (g *Graph) Event(e *pointer.Event) (bool, error) {
 	if g.Scene.IsActive() {
 		p := f32.Point{
@@ -50,30 +53,33 @@ func (g *Graph) Event(e *pointer.Event) (bool, error) {
 	return g.Scene.Event(e)
 }
 
+// Point adds a point to the graph
 func (g *Graph) Point(label string, p f32.Point) uint32 {
 	sp := f32.Point{
 		X: g.scaleX(p.X),
 		Y: g.scaleY(p.Y),
 	}
 	point := NewPoint(label, sp)
-	g.Scene.RawCompoundElement.Add(point)
+	g.Add(point)
 	return point.ID()
 }
 
+// AxisX adds an x axis to the graph
 func (g *Graph) AxisX() {
 	so := f32.Point{
 		X: g.scaleX(0),
 		Y: g.scaleY(0),
 	}
-	g.Scene.RawCompoundElement.Add(NewAxisX(so, g.rect.Max.X-g.rect.Min.X, 10))
+	g.Add(NewAxisX(so, g.rect.Max.X-g.rect.Min.X, 10))
 }
 
+// AxisY adds a y axis to the graph
 func (g *Graph) AxisY() {
 	so := f32.Point{
 		X: g.scaleX(0),
 		Y: g.scaleY(scale),
 	}
-	g.Scene.RawCompoundElement.Add(NewAxisY(so, g.rect.Max.Y-g.rect.Min.Y, 10))
+	g.Add(NewAxisY(so, g.rect.Max.Y-g.rect.Min.Y, 10))
 }
 
 // scaleX calculates the 'real' x - coordinate of a relative value to the grid
@@ -98,43 +104,54 @@ func (g *Graph) deScaleY(value float32) float32 {
 
 // computation specific methods
 
-func (g *Graph) AddCollection(series model.Collection) {
+// AddCollection adds a series model collection to the graph
+func (g *Graph) AddCollection(collection model.Collection) {
 	// TODO : we assume here that minimum is always '0'.
 	// BUT : we should handle also negative values
-	_, max := series.Edge()
-	var recalcNeeded bool
-	if float32(max.Coords()[0]) > g.max.X {
-		g.max.X = float32(max.Coords()[0])
-		recalcNeeded = true
+	bound := collection.Bounds()
+	var doRecalc bool
+	if bound.Max.X > g.max.X {
+		g.max.X = bound.Max.X
+		doRecalc = true
 	}
-	if float32(max.Coords()[1]) > g.max.Y {
-		g.max.Y = float32(max.Coords()[1])
-		recalcNeeded = true
+	if bound.Max.Y > g.max.Y {
+		g.max.Y = bound.Max.Y
+		doRecalc = true
 	}
-	if recalcNeeded {
+
+	if doRecalc {
 		for sId, c := range g.collections {
-			delete(g.collections, sId)
-			for _, pId := range g.points[sId] {
-				g.Remove(pId)
-			}
-			delete(g.points, sId)
-			g.eval(sId, c)
+			println(fmt.Sprintf("del collection series %v", sId))
+			g.add(sId, c)
 		}
 	}
-	g.eval(uuid.New().ID(), series)
+
+	g.add(uuid.New().ID(), collection)
+
 }
 
-func (g *Graph) eval(seriesId uint32, series model.Collection) {
+// remove removes a collection and it's points
+func (g *Graph) remove(sId uint32) {
+	delete(g.collections, sId)
+	for _, pId := range g.points[sId] {
+		g.Remove(pId)
+	}
+	delete(g.points, sId)
+}
 
-	var points = make([]uint32, series.Size())
+// add scales the model series into canvas coordinates scale
+func (g *Graph) add(sId uint32, collection model.Collection) {
+
+	println(fmt.Sprintf("add series %v", sId))
+	var points = make([]uint32, collection.Size())
 	i := 0
 	for {
-		element, hasNext := series.Next()
-		if element != nil {
-			x := float32(element.Coords()[0]) / g.max.X
-			y := float32(element.Coords()[1]) / g.max.Y
+		point, ok, hasNext := collection.Next()
+		if ok {
+			x := point.X / g.max.X
+			y := point.Y / g.max.Y
 			id := g.Point(
-				fmt.Sprintf("%f - %f", element.Coords()[0], element.Coords()[1]),
+				point.Label,
 				f32.Point{
 					X: scale * x,
 					Y: scale * y,
@@ -146,6 +163,6 @@ func (g *Graph) eval(seriesId uint32, series model.Collection) {
 		}
 		i++
 	}
-	g.collections[seriesId] = series
-	g.points[seriesId] = points
+	g.collections[sId] = collection
+	g.points[sId] = points
 }

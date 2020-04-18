@@ -2,7 +2,7 @@ package entity
 
 import (
 	"fmt"
-	"github/drakos74/oremi/internal/canvas"
+	"github/drakos74/oremi/internal/gui/canvas"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -11,6 +11,7 @@ import (
 	"gioui.org/widget/material"
 )
 
+// Point is a point element
 type Point struct {
 	canvas.RawElement
 	canvas.RawDynamicElement
@@ -20,6 +21,7 @@ type Point struct {
 	label string
 }
 
+// NewPoint creates a new point
 func NewPoint(label string, center f32.Point) *Point {
 	var w float32 = 2
 	rect := calculateRect(center, w)
@@ -41,6 +43,7 @@ func calculateRect(center f32.Point, w float32) f32.Rectangle {
 	}
 }
 
+// Draw draws the point on the canvas
 func (p *Point) Draw(gtx *layout.Context, th *material.Theme) error {
 	r := *p.rect
 	if p.IsActive() {
