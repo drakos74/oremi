@@ -14,11 +14,11 @@ func DrawCollections(width, height float32, collection ...model.Collection) {
 	var scene gui.Scene
 	scene.WithDimensions(width, height)
 
-	collection = clearCollections(collection)
+	cols := clearCollections(collection)
 
-	w := width * 2 * 95 / float32(len(collection)*100)
+	w := width * 2 * 95 / float32(len(cols)*100)
 
-	for i, c := range collection {
+	for i, c := range cols {
 		g := f32.Rectangle{
 			Min: f32.Point{X: (float32(i) * w) + 50, Y: 50},
 			Max: f32.Point{X: (float32(i) * w) + w, Y: 2 * height * 95 / 100},

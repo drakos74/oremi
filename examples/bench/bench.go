@@ -21,9 +21,8 @@ func main() {
 		log.Fatalf("could not parse benchamrks from file '%s': %v", file, err)
 	}
 
-	latency := benchmarks.Extract(bench.Operations, bench.Latency)
-	throughput := benchmarks.Extract(bench.Heap, bench.Throughput)
-
-	bench.DrawCollections(1200, 800, latency, throughput)
-
+	bench.DrawCollections(1600, 800,
+		benchmarks.Extract(bench.Operations, bench.Latency),
+		benchmarks.Extract(bench.Heap, bench.Throughput),
+	)
 }
