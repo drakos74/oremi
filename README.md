@@ -6,4 +6,5 @@ A data guided approach on visualising and identifying patterns
 
 ## Demo
 
-[plotting of mathematical functions](../master/demo/graph)
+check the [examples] (../master/examples/graph/graph.go)
+

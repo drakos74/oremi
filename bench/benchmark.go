@@ -3,10 +3,16 @@ package bench
 import (
 	"bufio"
 	"fmt"
-	"github/drakos74/oremi/internal/data/model"
+	datamodel "github/drakos74/oremi/internal/data/model"
+	"github/drakos74/oremi/internal/gui"
+	"github/drakos74/oremi/internal/gui/canvas/entity"
+	uimodel "github/drakos74/oremi/internal/gui/model"
+	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"gioui.org/f32"
 )
 
 const (
@@ -16,41 +22,67 @@ const (
 	heap       = "allocs/op"
 )
 
-type Benchmarks []Benchmark
+type benchmarks []benchmark
 
-type Benchmark struct {
+type benchmark struct {
 	labels []string
 	// numeric labels
 	numLabels map[string]float64
 }
 
-func (b Benchmark) Latency() float64 {
+func (b benchmark) Latency() float64 {
 	return b.numLabels[latency]
 }
 
-func (b Benchmark) Operations() float64 {
+func (b benchmark) Operations() float64 {
 	return b.numLabels[operations]
 }
 
-func (b Benchmark) Throughput() float64 {
+func (b benchmark) Throughput() float64 {
 	return b.numLabels[throughput]
 }
 
-func (b Benchmark) Heap() float64 {
+func (b benchmark) Heap() float64 {
 	return b.numLabels[heap]
 }
 
-func (b Benchmarks) ToCollection() model.Collection {
-	series := model.NewSeries(2)
+// ParseAndPlot will parse a simple benchmark log file and plot the results
+// x - axis latency
+// y - axis operations
+func ParseAndPlot(file string, width, height float32) {
+	b, err := parseBenchmarks(file)
+
+	if err != nil {
+		log.Fatalf("could not parse benchamrks from file '%s': %v", file, err)
+	}
+
+	collection := b.toCollection()
+
+	var scene gui.Scene
+	scene.WithDimensions(width, height)
+
+	g := f32.Rectangle{
+		Min: f32.Point{X: 50, Y: 50},
+		Max: f32.Point{X: width * 2 * 95 / 100, Y: height * 2 * 95 / 100},
+	}
+	graph := entity.NewGraph(&g)
+	graph.AddCollection(uimodel.NewSeries(collection))
+
+	scene.Add(graph)
+	scene.Run()
+}
+
+func (b benchmarks) toCollection() datamodel.Collection {
+	series := datamodel.NewSeries(2)
 	for _, benchmark := range b {
-		series.Add(model.NewVector(fmt.Sprintf("%v", benchmark.labels), benchmark.Latency(), benchmark.Operations()))
+		series.Add(datamodel.NewVector(fmt.Sprintf("%v", benchmark.labels), benchmark.Latency(), benchmark.Operations()))
 	}
 	return series
 }
 
-func ParseBenchmarks(f string) (Benchmarks, error) {
+func parseBenchmarks(f string) (benchmarks, error) {
 
-	var benchmarks []Benchmark
+	var benchmarks []benchmark
 
 	file, err := os.Open(f)
 	if err != nil {
@@ -77,18 +109,18 @@ func ParseBenchmarks(f string) (Benchmarks, error) {
 
 }
 
-func parseBenchmark(line string) (*Benchmark, error) {
+func parseBenchmark(line string) (*benchmark, error) {
 	parts := strings.Fields(line)
 
 	if isBenchmarkOutput(parts) {
 		return parseAsBenchmark(parts), nil
 	}
 
-	return nil, fmt.Errorf("could not find benchmark within %v", parts)
+	return nil, fmt.Errorf("could not find bench within %v", parts)
 
 }
 
-func parseAsBenchmark(parts []string) *Benchmark {
+func parseAsBenchmark(parts []string) *benchmark {
 	ops, _ := strconv.Atoi(parts[1])
 	lat, _ := strconv.ParseFloat(parts[2], 64)
 
@@ -97,7 +129,7 @@ func parseAsBenchmark(parts []string) *Benchmark {
 	numLabels[latency] = lat
 	numLabels[operations] = float64(ops)
 
-	return &Benchmark{
+	return &benchmark{
 		labels:    labels,
 		numLabels: numLabels,
 	}

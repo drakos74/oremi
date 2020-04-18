@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
 	"github/drakos74/oremi/internal/gui/canvas/entity"
 	"log"
@@ -16,24 +15,28 @@ import (
 	"gioui.org/unit"
 )
 
+// Scene is the main container for the canvas objects
 type Scene struct {
 	width    float32
 	height   float32
 	elements []canvas.Element
 }
 
+// WithDimensions defines the window dimensions
 func (s *Scene) WithDimensions(width, height float32) {
 	s.width = width
 	s.height = height
 }
 
+// Add adds an element to the scene
 func (s *Scene) Add(element canvas.Element) {
 	s.elements = append(s.elements, element)
 }
 
+// Run start the gui
 func (s *Scene) Run() {
 	go func() {
-		w := app.NewWindow(app.Title("graph-demo"), app.Size(unit.Dp(s.width), unit.Dp(s.height)))
+		w := app.NewWindow(app.Title("graph-examples"), app.Size(unit.Dp(s.width), unit.Dp(s.height)))
 		if err := loop(s, w); err != nil {
 			log.Fatal(err)
 		}
@@ -47,13 +50,12 @@ func loop(screen *Scene, w *app.Window) error {
 	gtx := layout.NewContext(w.Queue())
 
 	scene := entity.NewContainer(&f32.Rectangle{
-		Min: f32.Point{0, 0},
+		Min: f32.Point{X: 0, Y: 0},
 		// TODO : we need to get rid of this inconsistency at some point e.g. of multiplying by 2 ...
-		Max: f32.Point{2 * screen.width, 2 * screen.height},
+		Max: f32.Point{X: 2 * screen.width, Y: 2 * screen.height},
 	})
 
 	for _, element := range screen.elements {
-		println(fmt.Sprintf("element = %v", element))
 		scene.Add(element)
 	}
 
