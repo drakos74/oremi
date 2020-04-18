@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github/drakos74/oremi/bench"
+	"log"
 )
 
 func main() {
@@ -14,5 +15,12 @@ func main() {
 
 	println(fmt.Sprintf("parsing bench file = %v", *file))
 
-	bench.ParseAndPlot(*file, 1200, 800)
+	collection, err := bench.NewBenchmarkCollection(*file)
+
+	if err != nil {
+		log.Fatalf("could not parse benchamrks from file '%s': %v", file, err)
+	}
+
+	bench.DrawCollection(collection, 1200, 800)
+
 }

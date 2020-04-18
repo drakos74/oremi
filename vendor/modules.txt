@@ -34,8 +34,14 @@ gioui.org/text
 gioui.org/unit
 gioui.org/widget
 gioui.org/widget/material
+# github.com/davecgh/go-spew v1.1.0
+github.com/davecgh/go-spew/spew
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
+# github.com/stretchr/testify v1.5.1
+github.com/stretchr/testify/assert
 # golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
 golang.org/x/exp/shiny/iconvg
 golang.org/x/exp/shiny/iconvg/internal/gradient
@@ -49,3 +55,5 @@ golang.org/x/image/vector
 # golang.org/x/sys v0.0.0-20200124204421-9fbb57f87de9
 golang.org/x/sys/unix
 golang.org/x/sys/windows
+# gopkg.in/yaml.v2 v2.2.2
+gopkg.in/yaml.v2
