@@ -20,10 +20,10 @@ func DrawCollections(width, height float32, collection ...model.Collection) {
 
 	for i, c := range cols {
 		g := f32.Rectangle{
-			Min: f32.Point{X: (float32(i) * w) + 50, Y: 50},
+			Min: f32.Point{X: (float32(i) * w) + 100, Y: 50},
 			Max: f32.Point{X: (float32(i) * w) + w, Y: 2 * height * 95 / 100},
 		}
-		graph := entity.NewGraph(&g)
+		graph := entity.NewGraph(c.Labels()[0], c.Labels()[1], &g)
 		graph.AddCollection(uimodel.NewSeries(c))
 
 		scene.Add(graph)

@@ -28,7 +28,7 @@ func main() {
 		Min: f32.Point{X: 50, Y: 50},
 		Max: f32.Point{X: ww * 95 / 100, Y: hh * 95 / 100},
 	}
-	graph := entity.NewGraph(&g)
+	graph := entity.NewGraph("x", "f(x)", &g)
 	graph.AddCollection(model.NewSeries(generator.NewPolynomial(120, 0, 0.1, 0, 1)))
 	graph.AddCollection(model.NewSeries(generator.NewLine(200, 2, 0, 0.1)))
 	graph.AddCollection(model.NewSeries(generator.NewLine(200, 1, 0, 0.1)))

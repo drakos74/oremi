@@ -1,13 +1,11 @@
 package entity
 
 import (
-	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
-	"gioui.org/unit"
 	"gioui.org/widget/material"
 )
 
@@ -18,7 +16,7 @@ type Point struct {
 	w     float32
 	c     f32.Point
 	rect  *f32.Rectangle
-	label string
+	label Label
 }
 
 // NewPoint creates a new point
@@ -31,7 +29,7 @@ func NewPoint(label string, center f32.Point) *Point {
 		w,
 		center,
 		&rect,
-		label,
+		NewLabel(center, label),
 	}
 	return p
 }
@@ -48,11 +46,11 @@ func (p *Point) Draw(gtx *layout.Context, th *material.Theme) error {
 	r := *p.rect
 	if p.IsActive() {
 		r = calculateRect(p.c, 2*p.w)
-		// TODO : fix show label on hover and remove println
-		th.Label(unit.Px(50), "text").Layout(gtx)
-		println(fmt.Sprintf("label=%v", p.label))
+		err := p.label.Draw(gtx, th)
+		if err != nil {
+			return err
+		}
 	}
 	paint.PaintOp{Rect: r}.Add(gtx.Ops)
-
 	return nil
 }

@@ -5,6 +5,8 @@ import (
 	"github/drakos74/oremi/internal/gui/canvas/entity"
 	"log"
 
+	"gioui.org/font/gofont"
+
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
 	"gioui.org/io/system"
@@ -14,6 +16,10 @@ import (
 	"gioui.org/app"
 	"gioui.org/unit"
 )
+
+func init() {
+	gofont.Register()
+}
 
 // Scene is the main container for the canvas objects
 type Scene struct {
@@ -35,6 +41,7 @@ func (s *Scene) Add(element canvas.Element) {
 
 // Run start the gui
 func (s *Scene) Run() {
+
 	go func() {
 		w := app.NewWindow(app.Title("graph-examples"), app.Size(unit.Dp(s.width), unit.Dp(s.height)))
 		if err := loop(s, w); err != nil {

@@ -51,6 +51,7 @@ type Collection interface {
 	Iterator
 	Size() int
 	Edge() (min, max Vector)
+	Labels() []string
 }
 
 // Collection represents a collection of vectors e.g. a graph element as such

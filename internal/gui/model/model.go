@@ -16,6 +16,7 @@ type Collection interface {
 	Next() (point *LabeledPoint, ok, next bool)
 	Size() int
 	Reset()
+	Labels() []string
 }
 
 type Series struct {

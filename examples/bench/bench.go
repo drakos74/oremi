@@ -13,12 +13,12 @@ func main() {
 
 	flag.Parse()
 
-	println(fmt.Sprintf("parsing bench file = %v", *file))
+	println(fmt.Sprintf("parsing benchmark file = %v", *file))
 
 	benchmarks, err := bench.New(*file)
 
 	if err != nil {
-		log.Fatalf("could not parse benchamrks from file '%s': %v", file, err)
+		log.Fatalf("could not parse benchamrks from file '%s': %v", *file, err)
 	}
 
 	bench.DrawCollections(1600, 800,

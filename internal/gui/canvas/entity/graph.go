@@ -1,9 +1,11 @@
 package entity
 
 import (
+	"errors"
 	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
 	"github/drakos74/oremi/internal/gui/model"
+	"log"
 
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
@@ -20,10 +22,11 @@ type Graph struct {
 	max         *f32.Point
 	collections map[uint32]model.Collection
 	points      map[uint32][]uint32
+	labels      []string
 }
 
 // NewGraph creates a new graph
-func NewGraph(rect *f32.Rectangle) *Graph {
+func NewGraph(xLabel, yLabel string, rect *f32.Rectangle) *Graph {
 	g := &Graph{
 		*canvas.NewRawElement(),
 		*NewContainer(rect),
@@ -34,9 +37,10 @@ func NewGraph(rect *f32.Rectangle) *Graph {
 		},
 		make(map[uint32]model.Collection),
 		make(map[uint32][]uint32),
+		[]string{xLabel, yLabel},
 	}
-	g.AxisX()
-	g.AxisY()
+	g.AxisX(xLabel)
+	g.AxisY(yLabel)
 	return g
 }
 
@@ -66,21 +70,21 @@ func (g *Graph) Point(label string, p f32.Point) uint32 {
 }
 
 // AxisX adds an x axis to the graph
-func (g *Graph) AxisX() {
+func (g *Graph) AxisX(label string) {
 	so := f32.Point{
 		X: g.scaleX(0),
 		Y: g.scaleY(0),
 	}
-	g.Add(NewAxisX(so, g.rect.Max.X-g.rect.Min.X, 10))
+	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10))
 }
 
 // AxisY adds a y axis to the graph
-func (g *Graph) AxisY() {
+func (g *Graph) AxisY(label string) {
 	so := f32.Point{
 		X: g.scaleX(0),
 		Y: g.scaleY(scale),
 	}
-	g.Add(NewAxisY(so, g.rect.Max.Y-g.rect.Min.Y, 10))
+	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10))
 }
 
 // scaleX calculates the 'real' x - coordinate of a relative value to the grid
@@ -103,10 +107,24 @@ func (g *Graph) deScaleY(value float32) float32 {
 	return scale - (value-g.rect.Min.Y)/(g.rect.Max.Y-g.rect.Min.Y)*scale
 }
 
+// model validation methods
+func (g *Graph) fitsModel(collection model.Collection) error {
+	for i, label := range collection.Labels() {
+		if g.labels[i] != label {
+			return errors.New(fmt.Sprintf("model inconsistency on labels %v vs %v", g.labels, collection.Labels()))
+		}
+	}
+	return nil
+}
+
 // computation specific methods
 
 // AddCollection adds a series model collection to the graph
 func (g *Graph) AddCollection(collection model.Collection) {
+	err := g.fitsModel(collection)
+	if err != nil {
+		log.Fatalf("cannot add collection to graph: %v", err)
+	}
 	// TODO : we assume here that minimum is always '0'.
 	// BUT : we should handle also negative values
 	bound := collection.Bounds()

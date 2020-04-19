@@ -67,7 +67,7 @@ type Euclidean struct {
 // Generate generates a new number of points for the graph series
 func (g Euclidean) Num(num int) model.Collection {
 
-	l := model.NewSeries(2)
+	l := model.NewSeries("x", "f(x)", 2)
 
 	for i := 0; i < num; i++ {
 
@@ -87,7 +87,7 @@ func (g Euclidean) Num(num int) model.Collection {
 // Generate generates a new number of points for the graph series
 func (g Euclidean) Lim(limit float64) model.Collection {
 
-	l := model.NewSeries(2)
+	l := model.NewSeries("x", "f(x)", 2)
 
 	i := 0
 

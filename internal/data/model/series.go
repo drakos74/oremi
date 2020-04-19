@@ -13,15 +13,22 @@ type Series struct {
 	dim     int
 	min     Vector
 	max     Vector
+	labels  []string
 }
 
 // NewSeries creates a new series of the specified dimension
-func NewSeries(dim int) *Series {
+func NewSeries(x, y string, dim int) *Series {
 	min := make([]float64, dim)
 	for i, _ := range min {
 		min[i] = math.MaxFloat64
 	}
-	return &Series{dim: dim, vectors: make([]Vector, 0), min: NewVector("min", min...), max: NewVector("max", make([]float64, dim)...)}
+	return &Series{
+		dim:     dim,
+		vectors: make([]Vector, 0),
+		min:     NewVector("min", min...),
+		max:     NewVector("max", make([]float64, dim)...),
+		labels:  []string{x, y},
+	}
 }
 
 // Reset resets the iterator to the start of the collection
@@ -68,6 +75,11 @@ func (s *Series) Add(vector Vector) {
 // this is useful for quick comparisons of collections of data, as well as drawing and scaling
 func (s *Series) Edge() (min, max Vector) {
 	return s.min, s.max
+}
+
+// Reset resets the iterator to the start of the collection
+func (s *Series) Labels() []string {
+	return s.labels
 }
 
 func (s Series) String() string {
