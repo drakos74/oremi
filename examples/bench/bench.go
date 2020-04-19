@@ -9,7 +9,7 @@ import (
 
 func main() {
 
-	file := flag.String("file", "examples/bench/testdata/benchmark_output_ext.txt", "bench output file")
+	file := flag.String("file", "examples/bench/data/benchmark_output_ext.txt", "bench output file")
 
 	flag.Parse()
 
