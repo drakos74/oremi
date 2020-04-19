@@ -18,7 +18,7 @@ type Axis struct {
 }
 
 // NewAxisX creates a new x axis
-func NewAxisX(label string, start f32.Point, length float32, delim int) *Axis {
+func NewAxisX(label string, start f32.Point, length float32, delim int, calc canvas.CalcElement) *Axis {
 	rect := &f32.Rectangle{
 		Min: start,
 		Max: f32.Point{
@@ -36,16 +36,18 @@ func NewAxisX(label string, start f32.Point, length float32, delim int) *Axis {
 	}
 	for i := 0; i <= delim; i++ {
 		d := float32(i) / float32(delim)
-		axis.Add(NewDelimiterX(f32.Point{
-			X: axis.rect.Min.X + (axis.rect.Max.X-axis.rect.Min.X)*d,
-			Y: start.Y,
-		}))
+		axis.Add(NewDelimiterX(
+			f32.Point{
+				X: axis.rect.Min.X + (axis.rect.Max.X-axis.rect.Min.X)*d,
+				Y: start.Y,
+			},
+			calc.DeScaleX()))
 	}
 	return axis
 }
 
 // NewAxisY creates a new y axis
-func NewAxisY(label string, start f32.Point, length float32, delim int) *Axis {
+func NewAxisY(label string, start f32.Point, length float32, delim int, calc canvas.CalcElement) *Axis {
 	rect := &f32.Rectangle{
 		Min: start,
 		Max: f32.Point{
@@ -63,10 +65,12 @@ func NewAxisY(label string, start f32.Point, length float32, delim int) *Axis {
 	}
 	for i := 0; i <= delim; i++ {
 		d := float32(i) / float32(delim)
-		axis.Add(NewDelimiterY(f32.Point{
-			X: start.X,
-			Y: axis.rect.Min.Y + (axis.rect.Max.Y-axis.rect.Min.Y)*d,
-		}))
+		axis.Add(NewDelimiterY(
+			f32.Point{
+				X: start.X,
+				Y: axis.rect.Min.Y + (axis.rect.Max.Y-axis.rect.Min.Y)*d,
+			},
+			calc.DeScaleY()))
 	}
 	return axis
 }
@@ -85,12 +89,13 @@ func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
 type Delimiter struct {
 	canvas.RawElement
 	canvas.RawDynamicElement
-	rect  f32.Rectangle
-	label Label
+	rect      f32.Rectangle
+	label     Label
+	transform func() float32
 }
 
 // NewDelimiterX creates a new delimiter for an x axis
-func NewDelimiterX(p f32.Point) *Delimiter {
+func NewDelimiterX(p f32.Point, transform canvas.Transform) *Delimiter {
 	rect := f32.Rectangle{
 		Min: f32.Point{
 			X: p.X,
@@ -106,11 +111,14 @@ func NewDelimiterX(p f32.Point) *Delimiter {
 		*canvas.NewDynamicElement(rect),
 		rect,
 		NewLabel(p, ""),
+		func() float32 {
+			return transform(p.X)
+		},
 	}
 }
 
 // NewDelimiterY creates a new delimiter for an x axis
-func NewDelimiterY(p f32.Point) *Delimiter {
+func NewDelimiterY(p f32.Point, transform canvas.Transform) *Delimiter {
 	rect := f32.Rectangle{
 		Min: f32.Point{
 			X: p.X - 10,
@@ -125,7 +133,10 @@ func NewDelimiterY(p f32.Point) *Delimiter {
 		*canvas.NewRawElement(),
 		*canvas.NewDynamicElement(rect),
 		rect,
-		NewLabel(p, "text"),
+		NewLabel(p, ""),
+		func() float32 {
+			return transform(p.Y)
+		},
 	}
 }
 
@@ -133,7 +144,7 @@ func NewDelimiterY(p f32.Point) *Delimiter {
 func (m *Delimiter) Draw(gtx *layout.Context, th *material.Theme) error {
 	r := m.rect
 	if m.IsActive() {
-		m.label.Text(fmt.Sprintf("%v", m.rect.Min))
+		m.label.Text(fmt.Sprintf("%v", m.transform()))
 		err := m.label.Draw(gtx, th)
 		if err != nil {
 			return err

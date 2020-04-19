@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 )
 
+type Transform func(x float32) float32
+
 // Element is the main abstraction for any object living within the canvas
 type Element interface {
 	ID() uint32
@@ -188,4 +190,67 @@ func checkRect(rect f32.Rectangle, p f32.Point, s float32) bool {
 		Max: f32.Point{X: p.X + s, Y: p.Y + s},
 	}
 	return !rect.Intersect(r).Empty()
+}
+
+type CalcElement interface {
+	ScaleX() Transform
+	DeScaleX() Transform
+	ScaleY() Transform
+	DeScaleY() Transform
+}
+
+type RawCalcElement struct {
+	scale float32
+	rect  *f32.Rectangle
+}
+
+func (c RawCalcElement) ScaleX() Transform {
+	return func(x float32) float32 {
+		return scaleX(*c.rect, c.scale, x)
+	}
+}
+
+func (c RawCalcElement) DeScaleX() Transform {
+	return func(sx float32) float32 {
+		return deScaleX(*c.rect, c.scale, sx)
+	}
+}
+
+func (c RawCalcElement) ScaleY() Transform {
+	return func(y float32) float32 {
+		return scaleY(*c.rect, c.scale, y)
+	}
+}
+
+func (c RawCalcElement) DeScaleY() Transform {
+	return func(sy float32) float32 {
+		return deScaleY(*c.rect, c.scale, sy)
+	}
+}
+
+func NewRawCalcElement(rect *f32.Rectangle, scale float32) *RawCalcElement {
+	return &RawCalcElement{
+		scale: scale,
+		rect:  rect,
+	}
+}
+
+// scaleX calculates the 'real' x - coordinate of a relative value to the grid
+func scaleX(rect f32.Rectangle, scale, value float32) float32 {
+	return rect.Min.X + ((rect.Max.X - rect.Min.X) * value / scale)
+}
+
+// deScaleX calculates the 'relative' x - coordinate of a 'real' value
+func deScaleX(rect f32.Rectangle, scale, value float32) float32 {
+	return (value - rect.Min.X) / (rect.Max.X - rect.Min.X) * scale
+}
+
+// scaleY calculates the 'real' y - coordinate of a relative value to the grid
+func scaleY(rect f32.Rectangle, scale, value float32) float32 {
+	return rect.Max.Y - ((rect.Max.Y - rect.Min.Y) * value / scale)
+}
+
+// deScaleY calculates the 'relative' y - coordinate of a 'real' value
+func deScaleY(rect f32.Rectangle, scale, value float32) float32 {
+	return scale - (value-rect.Min.Y)/(rect.Max.Y-rect.Min.Y)*scale
 }

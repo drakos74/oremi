@@ -17,6 +17,7 @@ const scale = 1000
 // Graph is a graph object designed to hold all the graph contents as child elements
 type Graph struct {
 	canvas.RawElement
+	canvas.RawCalcElement
 	Container
 	rect        *f32.Rectangle
 	max         *f32.Point
@@ -29,6 +30,7 @@ type Graph struct {
 func NewGraph(xLabel, yLabel string, rect *f32.Rectangle) *Graph {
 	g := &Graph{
 		*canvas.NewRawElement(),
+		*canvas.NewRawCalcElement(rect, scale),
 		*NewContainer(rect),
 		rect,
 		&f32.Point{
@@ -48,8 +50,8 @@ func NewGraph(xLabel, yLabel string, rect *f32.Rectangle) *Graph {
 func (g *Graph) Event(e *pointer.Event) (bool, error) {
 	if g.Container.IsActive() {
 		p := f32.Point{
-			X: g.deScaleX(e.Position.X),
-			Y: g.deScaleY(e.Position.Y),
+			X: g.DeScaleX()(e.Position.X),
+			Y: g.DeScaleY()(e.Position.Y),
 		}
 		// TODO : remove or enable only with appropriate config or action
 		println(fmt.Sprintf("cursor=%v", p))
@@ -61,8 +63,8 @@ func (g *Graph) Event(e *pointer.Event) (bool, error) {
 // Point adds a point to the graph
 func (g *Graph) Point(label string, p f32.Point) uint32 {
 	sp := f32.Point{
-		X: g.scaleX(p.X),
-		Y: g.scaleY(p.Y),
+		X: g.ScaleX()(p.X),
+		Y: g.ScaleY()(p.Y),
 	}
 	point := NewPoint(label, sp)
 	g.Add(point)
@@ -72,39 +74,21 @@ func (g *Graph) Point(label string, p f32.Point) uint32 {
 // AxisX adds an x axis to the graph
 func (g *Graph) AxisX(label string) {
 	so := f32.Point{
-		X: g.scaleX(0),
-		Y: g.scaleY(0),
+		X: g.ScaleX()(0),
+		Y: g.ScaleY()(0),
 	}
-	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10))
+	// TODO : fix the calcElement parameter to take into account the max
+	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10, g))
 }
 
 // AxisY adds a y axis to the graph
 func (g *Graph) AxisY(label string) {
 	so := f32.Point{
-		X: g.scaleX(0),
-		Y: g.scaleY(scale),
+		X: g.ScaleX()(0),
+		Y: g.ScaleY()(scale),
 	}
-	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10))
-}
-
-// scaleX calculates the 'real' x - coordinate of a relative value to the grid
-func (g *Graph) scaleX(value float32) float32 {
-	return g.rect.Min.X + ((g.rect.Max.X - g.rect.Min.X) * value / scale)
-}
-
-// deScaleX calculates the 'relative' x - coordinate of a 'real' value
-func (g *Graph) deScaleX(value float32) float32 {
-	return (value - g.rect.Min.X) / (g.rect.Max.X - g.rect.Min.X) * scale
-}
-
-// scaleY calculates the 'real' y - coordinate of a relative value to the grid
-func (g *Graph) scaleY(value float32) float32 {
-	return g.rect.Max.Y - ((g.rect.Max.Y - g.rect.Min.Y) * value / scale)
-}
-
-// deScaleX calculates the 'relative' y - coordinate of a 'real' value
-func (g *Graph) deScaleY(value float32) float32 {
-	return scale - (value-g.rect.Min.Y)/(g.rect.Max.Y-g.rect.Min.Y)*scale
+	// TODO : fix the calcElement parameter to take into account the max
+	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10, g))
 }
 
 // model validation methods
