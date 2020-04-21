@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
+	"github/drakos74/oremi/internal/gui/canvas/math"
 	"github/drakos74/oremi/internal/gui/model"
 	"log"
 
@@ -17,10 +18,10 @@ const scale = 1000
 // Graph is a graph object designed to hold all the graph contents as child elements
 type Graph struct {
 	canvas.RawElement
-	canvas.RawCalcElement
+	math.CoordinateMapper
 	Container
+	scale       *math.LinearMapper
 	rect        *f32.Rectangle
-	max         *f32.Point
 	collections map[uint32]model.Collection
 	points      map[uint32][]uint32
 	labels      []string
@@ -28,15 +29,23 @@ type Graph struct {
 
 // NewGraph creates a new graph
 func NewGraph(xLabel, yLabel string, rect *f32.Rectangle) *Graph {
+
+	uiCoordinates := math.NewRawCalcElement(rect, scale)
+
+	dataCoordinates := math.NewLinearMapper(scale, f32.Point{
+		X: 0,
+		Y: 0,
+	}, f32.Point{
+		X: 0,
+		Y: 0,
+	})
+
 	g := &Graph{
 		*canvas.NewRawElement(),
-		*canvas.NewRawCalcElement(rect, scale),
+		*uiCoordinates,
 		*NewContainer(rect),
+		dataCoordinates,
 		rect,
-		&f32.Point{
-			X: 0,
-			Y: 0,
-		},
 		make(map[uint32]model.Collection),
 		make(map[uint32][]uint32),
 		[]string{xLabel, yLabel},
@@ -78,7 +87,7 @@ func (g *Graph) AxisX(label string) {
 		Y: g.ScaleY()(0),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10, g))
+	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10, math.NewStackedMapper(g.CoordinateMapper, g.scale)))
 }
 
 // AxisY adds a y axis to the graph
@@ -88,7 +97,7 @@ func (g *Graph) AxisY(label string) {
 		Y: g.ScaleY()(scale),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10, g))
+	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10, math.NewStackedMapper(g.CoordinateMapper, g.scale)))
 }
 
 // model validation methods
@@ -109,20 +118,11 @@ func (g *Graph) AddCollection(collection model.Collection) {
 	if err != nil {
 		log.Fatalf("cannot add collection to graph: %v", err)
 	}
-	// TODO : we assume here that minimum is always '0'.
-	// BUT : we should handle also negative values
-	bound := collection.Bounds()
-	var doRecalc bool
-	if bound.Max.X > g.max.X {
-		g.max.X = bound.Max.X
-		doRecalc = true
-	}
-	if bound.Max.Y > g.max.Y {
-		g.max.Y = bound.Max.Y
-		doRecalc = true
-	}
 
-	if doRecalc {
+	// TODO : we assume here that minimum is always '0'.
+	// NOTE : we should handle also negative values
+	bound := collection.Bounds()
+	if g.scale.Max(bound.Max) {
 		for sId, c := range g.collections {
 			g.remove(sId)
 			g.add(sId, c)
@@ -145,20 +145,17 @@ func (g *Graph) remove(sId uint32) {
 
 // add scales the model series into canvas coordinates scale
 func (g *Graph) add(sId uint32, collection model.Collection) {
-
 	collection.Reset()
 	var points = make([]uint32, collection.Size())
 	i := 0
 	for {
 		point, ok, hasNext := collection.Next()
 		if ok {
-			x := point.X / g.max.X
-			y := point.Y / g.max.Y
 			id := g.Point(
 				point.Label,
 				f32.Point{
-					X: scale * x,
-					Y: scale * y,
+					X: g.scale.ScaleX()(point.X),
+					Y: g.scale.ScaleY()(point.Y),
 				})
 			points[i] = id
 		}

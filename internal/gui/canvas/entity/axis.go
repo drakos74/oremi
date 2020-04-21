@@ -3,6 +3,7 @@ package entity
 import (
 	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
+	"github/drakos74/oremi/internal/gui/canvas/math"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -18,7 +19,7 @@ type Axis struct {
 }
 
 // NewAxisX creates a new x axis
-func NewAxisX(label string, start f32.Point, length float32, delim int, calc canvas.CalcElement) *Axis {
+func NewAxisX(label string, start f32.Point, length float32, delim int, calc math.Mapper) *Axis {
 	rect := &f32.Rectangle{
 		Min: start,
 		Max: f32.Point{
@@ -47,7 +48,7 @@ func NewAxisX(label string, start f32.Point, length float32, delim int, calc can
 }
 
 // NewAxisY creates a new y axis
-func NewAxisY(label string, start f32.Point, length float32, delim int, calc canvas.CalcElement) *Axis {
+func NewAxisY(label string, start f32.Point, length float32, delim int, calc math.Mapper) *Axis {
 	rect := &f32.Rectangle{
 		Min: start,
 		Max: f32.Point{
@@ -95,7 +96,7 @@ type Delimiter struct {
 }
 
 // NewDelimiterX creates a new delimiter for an x axis
-func NewDelimiterX(p f32.Point, transform canvas.Transform) *Delimiter {
+func NewDelimiterX(p f32.Point, transform math.Transform) *Delimiter {
 	rect := f32.Rectangle{
 		Min: f32.Point{
 			X: p.X,
@@ -118,7 +119,7 @@ func NewDelimiterX(p f32.Point, transform canvas.Transform) *Delimiter {
 }
 
 // NewDelimiterY creates a new delimiter for an x axis
-func NewDelimiterY(p f32.Point, transform canvas.Transform) *Delimiter {
+func NewDelimiterY(p f32.Point, transform math.Transform) *Delimiter {
 	rect := f32.Rectangle{
 		Min: f32.Point{
 			X: p.X - 10,
