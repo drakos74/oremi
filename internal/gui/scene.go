@@ -23,9 +23,15 @@ func init() {
 
 // Scene is the main container for the canvas objects
 type Scene struct {
+	title    string
 	width    float32
 	height   float32
 	elements []canvas.Element
+}
+
+// WithTitle defines the window title
+func (s *Scene) WithTitle(title string) {
+	s.title = title
 }
 
 // WithDimensions defines the window dimensions
@@ -43,7 +49,7 @@ func (s *Scene) Add(element canvas.Element) {
 func (s *Scene) Run() {
 
 	go func() {
-		w := app.NewWindow(app.Title("graph-examples"), app.Size(unit.Dp(s.width), unit.Dp(s.height)))
+		w := app.NewWindow(app.Title(s.title), app.Size(unit.Dp(s.width), unit.Dp(s.height)))
 		if err := loop(s, w); err != nil {
 			log.Fatal(err)
 		}

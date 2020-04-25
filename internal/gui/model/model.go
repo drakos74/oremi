@@ -8,9 +8,10 @@ import (
 
 type LabeledPoint struct {
 	f32.Point
-	Label string
+	Label []string
 }
 
+// TODO : embed the data model collection into the interface
 type Collection interface {
 	Bounds() *f32.Rectangle
 	Next() (point *LabeledPoint, ok, next bool)
@@ -44,6 +45,7 @@ func (s Series) Bounds() *f32.Rectangle {
 func (s Series) Next() (point *LabeledPoint, ok, next bool) {
 	if p, ok, next := s.Collection.Next(); ok {
 		return &LabeledPoint{
+			// TODO : make the coordinate choice connected to the labels and the graph options in general
 			Point: f32.Point{
 				X: float32(p.Coords[0]),
 				Y: float32(p.Coords[1]),

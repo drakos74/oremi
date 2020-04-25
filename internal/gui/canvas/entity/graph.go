@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
-	"github/drakos74/oremi/internal/gui/canvas/math"
+	uimath "github/drakos74/oremi/internal/gui/canvas/math"
 	"github/drakos74/oremi/internal/gui/model"
 	"log"
+	"math"
+	"strings"
 
 	"gioui.org/f32"
 	"gioui.org/io/pointer"
@@ -18,9 +20,9 @@ const scale = 1000
 // Graph is a graph object designed to hold all the graph contents as child elements
 type Graph struct {
 	canvas.RawElement
-	math.CoordinateMapper
+	uimath.CoordinateMapper
 	Container
-	scale       *math.LinearMapper
+	scale       *uimath.LinearMapper
 	rect        *f32.Rectangle
 	collections map[uint32]model.Collection
 	points      map[uint32][]uint32
@@ -28,13 +30,17 @@ type Graph struct {
 }
 
 // NewGraph creates a new graph
-func NewGraph(xLabel, yLabel string, rect *f32.Rectangle) *Graph {
+func NewGraph(labels []string, rect *f32.Rectangle) *Graph {
 
-	uiCoordinates := math.NewRawCalcElement(rect, scale)
+	if len(labels) < 2 {
+		log.Fatalf("cannot draw 2-d graph with only one dimension: %v", labels)
+	}
 
-	dataCoordinates := math.NewLinearMapper(scale, f32.Point{
-		X: 0,
-		Y: 0,
+	uiCoordinates := uimath.NewRawCalcElement(rect, scale)
+
+	dataCoordinates := uimath.NewLinearMapper(scale, f32.Point{
+		X: math.MaxFloat32,
+		Y: math.MaxFloat32,
 	}, f32.Point{
 		X: 0,
 		Y: 0,
@@ -48,10 +54,11 @@ func NewGraph(xLabel, yLabel string, rect *f32.Rectangle) *Graph {
 		rect,
 		make(map[uint32]model.Collection),
 		make(map[uint32][]uint32),
-		[]string{xLabel, yLabel},
+		labels,
 	}
-	g.AxisX(xLabel)
-	g.AxisY(yLabel)
+	// TODO : we should make the labels flexible and connected to the appropriate dimensions of the vectors
+	g.AxisX(labels[0])
+	g.AxisY(labels[1])
 	return g
 }
 
@@ -87,7 +94,7 @@ func (g *Graph) AxisX(label string) {
 		Y: g.ScaleY()(0),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10, math.NewStackedMapper(g.CoordinateMapper, g.scale)))
+	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale)))
 }
 
 // AxisY adds a y axis to the graph
@@ -97,7 +104,7 @@ func (g *Graph) AxisY(label string) {
 		Y: g.ScaleY()(scale),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10, math.NewStackedMapper(g.CoordinateMapper, g.scale)))
+	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale)))
 }
 
 // model validation methods
@@ -120,9 +127,13 @@ func (g *Graph) AddCollection(collection model.Collection) {
 	}
 
 	// TODO : we assume here that minimum is always '0'.
-	// NOTE : we should handle also negative values
+	// TODO : we should handle also negative values
 	bound := collection.Bounds()
-	if g.scale.Max(bound.Max) {
+
+	newMax := g.scale.Max(bound.Max)
+	newMin := g.scale.Min(bound.Min)
+
+	if newMax || newMin {
 		for sId, c := range g.collections {
 			g.remove(sId)
 			g.add(sId, c)
@@ -152,7 +163,7 @@ func (g *Graph) add(sId uint32, collection model.Collection) {
 		point, ok, hasNext := collection.Next()
 		if ok {
 			id := g.Point(
-				point.Label,
+				label(point.Label),
 				f32.Point{
 					X: g.scale.ScaleX()(point.X),
 					Y: g.scale.ScaleY()(point.Y),
@@ -165,4 +176,8 @@ func (g *Graph) add(sId uint32, collection model.Collection) {
 		i++
 	}
 	g.points[sId] = points
+}
+
+func label(labels []string) string {
+	return strings.Join(labels, "-")
 }

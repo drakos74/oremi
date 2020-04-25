@@ -1,6 +1,8 @@
 package math
 
 import (
+	"fmt"
+
 	"gioui.org/f32"
 )
 
@@ -120,6 +122,18 @@ type LinearMapper struct {
 	scale float32
 }
 
+func (l LinearMapper) String() string {
+	return fmt.Sprintf("%v", struct {
+		min   f32.Point
+		max   f32.Point
+		scale float32
+	}{
+		min:   *l.min,
+		max:   *l.max,
+		scale: l.scale,
+	})
+}
+
 func (l *LinearMapper) Max(pmax f32.Point) bool {
 	var recalc bool
 	if pmax.X > l.max.X {
@@ -128,6 +142,19 @@ func (l *LinearMapper) Max(pmax f32.Point) bool {
 	}
 	if pmax.Y > l.max.Y {
 		l.max.Y = pmax.Y
+		recalc = true
+	}
+	return recalc
+}
+
+func (l *LinearMapper) Min(pmin f32.Point) bool {
+	var recalc bool
+	if pmin.X < l.min.X {
+		l.min.X = pmin.X
+		recalc = true
+	}
+	if pmin.Y < l.min.Y {
+		l.min.Y = pmin.Y
 		recalc = true
 	}
 	return recalc
@@ -150,8 +177,7 @@ func (l LinearMapper) DeScaleX() Transform {
 
 func (l LinearMapper) ScaleX() Transform {
 	return func(sx float32) float32 {
-		return l.scale*sx/(l.max.X-l.min.X) + l.min.X
-
+		return l.scale * (sx - l.min.X) / (l.max.X - l.min.X)
 	}
 }
 
@@ -163,7 +189,7 @@ func (l LinearMapper) DeScaleY() Transform {
 
 func (l LinearMapper) ScaleY() Transform {
 	return func(sy float32) float32 {
-		return l.scale*sy/(l.max.Y-l.min.Y) + l.min.Y
+		return l.scale * (sy - l.min.Y) / (l.max.Y - l.min.Y)
 	}
 }
 

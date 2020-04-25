@@ -24,12 +24,12 @@ type Benchmarks []Benchmark
 // x value to be used for the x-axis
 // y value to be used for the y-axis
 func (b Benchmarks) Extract(x, y string) model.Collection {
-	series := model.NewSeries(x, y, 2)
+	series := model.NewSeries(x, y)
 	for _, benchmark := range b {
 		x, hasX := benchmark.read(x)
 		y, hasY := benchmark.read(y)
 		if hasX && hasY {
-			series.Add(model.NewVector(fmt.Sprintf("%v", benchmark.labels), x, y))
+			series.Add(model.NewVector(benchmark.labels, x, y))
 		}
 	}
 	return series

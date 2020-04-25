@@ -67,13 +67,13 @@ type Euclidean struct {
 // Generate generates a new number of points for the graph series
 func (g Euclidean) Num(num int) model.Collection {
 
-	l := model.NewSeries("x", "f(x)", 2)
+	l := model.NewSeries("x", "f(x)")
 
 	for i := 0; i < num; i++ {
 
 		if x, ok, n := g.Next(); ok {
 			p := g.Call(x.Coords[0], 0)
-			l.Add(model.NewVector(fmt.Sprintf("f(%d)", i), p...))
+			l.Add(model.NewVector([]string{"f", fmt.Sprintf("%d", i)}, p...))
 			if !n {
 				log.Printf("could not generate more elements, source iterator ended at %d of %d", i, num)
 				break
@@ -87,14 +87,14 @@ func (g Euclidean) Num(num int) model.Collection {
 // Generate generates a new number of points for the graph series
 func (g Euclidean) Lim(limit float64) model.Collection {
 
-	l := model.NewSeries("x", "f(x)", 2)
+	l := model.NewSeries("x", "f(x)")
 
 	i := 0
 
 	for {
 		if x, ok, n := g.Next(); ok {
 			p := g.Call(x.Coords[0], 0)
-			l.Add(model.NewVector(fmt.Sprintf("f(%d)", i), p...))
+			l.Add(model.NewVector([]string{"f", fmt.Sprintf("%d", i)}, p...))
 			if !n {
 				log.Printf("cannot not generate more elements, source iterator ended at %d", i)
 				break

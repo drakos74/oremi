@@ -38,6 +38,8 @@ gioui.org/widget
 gioui.org/widget/material
 # github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew
+# github.com/gocarina/gocsv v0.0.0-20200330101823-46266ca37bd3
+github.com/gocarina/gocsv
 # github.com/google/uuid v1.1.1
 github.com/google/uuid
 # github.com/pmezard/go-difflib v1.0.0

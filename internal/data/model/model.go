@@ -7,13 +7,18 @@ import (
 
 // Vector defines a point in n dimensional space
 type Vector struct {
-	Label  string
+	Label  []string
 	Coords []float64
 }
 
 // NewVector creates a new point at the specified coordinates
-func NewVector(label string, x ...float64) Vector {
+func NewVector(label []string, x ...float64) Vector {
 	return Vector{Label: label, Coords: x}
+}
+
+// TODO : consider removing this abstraction (see usages)
+type V interface {
+	ToVector() (Vector, error)
 }
 
 // Norm returns the norm of the point
@@ -54,10 +59,9 @@ type Collection interface {
 	Labels() []string
 }
 
-// Collection represents a collection of vectors e.g. a graph element as such
-type CollectionBuilder interface {
-	Add(vector Vector)
-	Create() Collection
+// TODO : consider removing this abstraction (see usages)
+type C interface {
+	ToCollection() (Collection, error)
 }
 
 var dimensionValidator = func(e1, e2 Vector) {

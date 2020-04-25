@@ -22,7 +22,7 @@ func (i *Sequence) Next() (vector model.Vector, ok, hasNext bool) {
 	}
 	i.count++
 	i.current = next
-	return model.NewVector(fmt.Sprintf("%d", i.count), i.current), true, i.limit == 0 || i.current < i.limit
+	return model.NewVector([]string{fmt.Sprintf("%d", i.count)}, i.current), true, i.limit == 0 || i.current < i.limit
 }
 
 func (i *Sequence) Reset() {
