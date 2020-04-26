@@ -1,9 +1,11 @@
-package entity
+package graph
 
 import (
 	"fmt"
+	"github/drakos74/oremi/internal/gui"
 	"github/drakos74/oremi/internal/gui/canvas"
 	"github/drakos74/oremi/internal/gui/canvas/math"
+	"github/drakos74/oremi/internal/gui/style"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -14,8 +16,9 @@ import (
 // Axis is an axis element for graphs
 type Axis struct {
 	canvas.RawElement
-	Container
-	label Label
+	// TODO : axis should not be a container ... as container becomes now a style element
+	canvas.Container
+	label style.Label
 }
 
 // NewAxisX creates a new x axis
@@ -29,17 +32,18 @@ func NewAxisX(label string, start f32.Point, length float32, delim int, calc mat
 	}
 	axis := &Axis{
 		*canvas.NewRawElement(),
-		*NewContainer(rect),
-		NewLabel(f32.Point{
+		*canvas.NewContainer(rect),
+		style.NewLabel(f32.Point{
 			X: rect.Max.X,
 			Y: rect.Max.Y + 20,
 		}, label),
 	}
 	for i := 0; i <= delim; i++ {
 		d := float32(i) / float32(delim)
+		rect := axis.Rect()
 		axis.Add(NewDelimiterX(
 			f32.Point{
-				X: axis.rect.Min.X + (axis.rect.Max.X-axis.rect.Min.X)*d,
+				X: rect.Min.X + (rect.Max.X-rect.Min.X)*d,
 				Y: start.Y,
 			},
 			calc.DeScaleX()))
@@ -58,18 +62,19 @@ func NewAxisY(label string, start f32.Point, length float32, delim int, calc mat
 	}
 	axis := &Axis{
 		*canvas.NewRawElement(),
-		*NewContainer(rect),
-		NewLabel(f32.Point{
+		*canvas.NewContainer(rect),
+		style.NewLabel(f32.Point{
 			X: rect.Min.X - 20,
 			Y: rect.Min.Y - 2,
 		}, label),
 	}
 	for i := 0; i <= delim; i++ {
 		d := float32(i) / float32(delim)
+		rect := axis.Rect()
 		axis.Add(NewDelimiterY(
 			f32.Point{
 				X: start.X,
-				Y: axis.rect.Min.Y + (axis.rect.Max.Y-axis.rect.Min.Y)*d,
+				Y: rect.Min.Y + (rect.Max.Y-rect.Min.Y)*d,
 			},
 			calc.DeScaleY()))
 	}
@@ -78,7 +83,7 @@ func NewAxisY(label string, start f32.Point, length float32, delim int, calc mat
 
 // Draw draws the axis
 func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
-	paint.PaintOp{Rect: *a.Container.rect}.Add(gtx.Ops)
+	paint.PaintOp{Rect: a.Container.Rect()}.Add(gtx.Ops)
 	_, err := a.Elements(canvas.DrawAction(gtx, th))
 	if err != nil {
 		return err
@@ -89,9 +94,9 @@ func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
 // Delimiter is an axis child element representing a value on the respective axis
 type Delimiter struct {
 	canvas.RawElement
-	canvas.RawDynamicElement
+	gui.InteractiveElement
 	rect      f32.Rectangle
-	label     Label
+	label     style.Label
 	transform func() float32
 }
 
@@ -109,9 +114,9 @@ func NewDelimiterX(p f32.Point, transform math.Transform) *Delimiter {
 	}
 	return &Delimiter{
 		*canvas.NewRawElement(),
-		*canvas.NewDynamicElement(rect),
+		*gui.NewInteractiveElement(rect),
 		rect,
-		NewLabel(p, ""),
+		style.NewLabel(p, ""),
 		func() float32 {
 			return transform(p.X)
 		},
@@ -132,9 +137,9 @@ func NewDelimiterY(p f32.Point, transform math.Transform) *Delimiter {
 	}
 	return &Delimiter{
 		*canvas.NewRawElement(),
-		*canvas.NewDynamicElement(rect),
+		*gui.NewInteractiveElement(rect),
 		rect,
-		NewLabel(p, ""),
+		style.NewLabel(p, ""),
 		func() float32 {
 			return transform(p.Y)
 		},

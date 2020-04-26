@@ -1,4 +1,4 @@
-package entity
+package graph
 
 import (
 	"errors"
@@ -17,11 +17,11 @@ import (
 
 const scale = 1000
 
-// Graph is a graph object designed to hold all the graph contents as child elements
-type Graph struct {
+// Chart is a graph object designed to hold all the graph contents as child elements
+type Chart struct {
 	canvas.RawElement
 	uimath.CoordinateMapper
-	Container
+	canvas.Container
 	scale       *uimath.LinearMapper
 	rect        *f32.Rectangle
 	collections map[uint32]model.Collection
@@ -29,8 +29,8 @@ type Graph struct {
 	labels      []string
 }
 
-// NewGraph creates a new graph
-func NewGraph(labels []string, rect *f32.Rectangle) *Graph {
+// NewChart creates a new graph
+func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 
 	if len(labels) < 2 {
 		log.Fatalf("cannot draw 2-d graph with only one dimension: %v", labels)
@@ -46,10 +46,10 @@ func NewGraph(labels []string, rect *f32.Rectangle) *Graph {
 		Y: 0,
 	})
 
-	g := &Graph{
+	g := &Chart{
 		*canvas.NewRawElement(),
 		*uiCoordinates,
-		*NewContainer(rect),
+		*canvas.NewContainer(rect),
 		dataCoordinates,
 		rect,
 		make(map[uint32]model.Collection),
@@ -59,11 +59,12 @@ func NewGraph(labels []string, rect *f32.Rectangle) *Graph {
 	// TODO : we should make the labels flexible and connected to the appropriate dimensions of the vectors
 	g.AxisX(labels[0])
 	g.AxisY(labels[1])
+	//g.AddItem(style.NewCheckBox())
 	return g
 }
 
 // Event propagates the events to all child elements of the graph
-func (g *Graph) Event(e *pointer.Event) (bool, error) {
+func (g *Chart) Event(e *pointer.Event) (bool, error) {
 	if g.Container.IsActive() {
 		p := f32.Point{
 			X: g.DeScaleX()(e.Position.X),
@@ -77,7 +78,7 @@ func (g *Graph) Event(e *pointer.Event) (bool, error) {
 }
 
 // Point adds a point to the graph
-func (g *Graph) Point(label string, p f32.Point) uint32 {
+func (g *Chart) Point(label string, p f32.Point) uint32 {
 	sp := f32.Point{
 		X: g.ScaleX()(p.X),
 		Y: g.ScaleY()(p.Y),
@@ -88,7 +89,7 @@ func (g *Graph) Point(label string, p f32.Point) uint32 {
 }
 
 // AxisX adds an x axis to the graph
-func (g *Graph) AxisX(label string) {
+func (g *Chart) AxisX(label string) {
 	so := f32.Point{
 		X: g.ScaleX()(0),
 		Y: g.ScaleY()(0),
@@ -98,7 +99,7 @@ func (g *Graph) AxisX(label string) {
 }
 
 // AxisY adds a y axis to the graph
-func (g *Graph) AxisY(label string) {
+func (g *Chart) AxisY(label string) {
 	so := f32.Point{
 		X: g.ScaleX()(0),
 		Y: g.ScaleY()(scale),
@@ -108,7 +109,7 @@ func (g *Graph) AxisY(label string) {
 }
 
 // model validation methods
-func (g *Graph) fitsModel(collection model.Collection) error {
+func (g *Chart) fitsModel(collection model.Collection) error {
 	for i, label := range collection.Labels() {
 		if g.labels[i] != label {
 			return errors.New(fmt.Sprintf("model inconsistency on labels %v vs %v", g.labels, collection.Labels()))
@@ -120,7 +121,7 @@ func (g *Graph) fitsModel(collection model.Collection) error {
 // computation specific methods
 
 // AddCollection adds a series model collection to the graph
-func (g *Graph) AddCollection(collection model.Collection) {
+func (g *Chart) AddCollection(collection model.Collection) {
 	err := g.fitsModel(collection)
 	if err != nil {
 		log.Fatalf("cannot add collection to graph: %v", err)
@@ -147,7 +148,7 @@ func (g *Graph) AddCollection(collection model.Collection) {
 }
 
 // remove removes a collection and it's points
-func (g *Graph) remove(sId uint32) {
+func (g *Chart) remove(sId uint32) {
 	for _, pId := range g.points[sId] {
 		g.Remove(pId)
 	}
@@ -155,7 +156,7 @@ func (g *Graph) remove(sId uint32) {
 }
 
 // add scales the model series into canvas coordinates scale
-func (g *Graph) add(sId uint32, collection model.Collection) {
+func (g *Chart) add(sId uint32, collection model.Collection) {
 	collection.Reset()
 	var points = make([]uint32, collection.Size())
 	i := 0

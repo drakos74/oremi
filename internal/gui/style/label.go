@@ -1,4 +1,4 @@
-package entity
+package style
 
 import (
 	"gioui.org/f32"
@@ -47,8 +47,11 @@ func (l *Label) Position(position f32.Point) {
 }
 
 func (l Label) Draw(gtx *layout.Context, th *material.Theme) error {
+	// TODO : try with StackOp
+	dim := gtx.Dimensions
 	op.TransformOp{}.Offset(l.position).Add(gtx.Ops)
 	th.Label(unit.Px(30), l.text).Layout(gtx)
 	op.TransformOp{}.Offset(l.reset).Add(gtx.Ops)
+	gtx.Dimensions = dim
 	return nil
 }

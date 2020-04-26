@@ -4,32 +4,38 @@ import (
 	datamodel "github/drakos74/oremi/internal/data/model"
 	uimodel "github/drakos74/oremi/internal/gui/model"
 
+	"gioui.org/layout"
+
 	"github/drakos74/oremi/internal/gui"
-	"github/drakos74/oremi/internal/gui/canvas/entity"
+	entity "github/drakos74/oremi/internal/gui/canvas/graph"
 
 	"gioui.org/f32"
 )
 
 func DrawScene(title string, width, height float32, collection map[string][]datamodel.Collection) {
-	var scene gui.Scene
-	scene.WithTitle(title)
-	scene.WithDimensions(width, height)
 
-	w := width * 2 * 95 / float32(len(collection)*100)
+	cs := len(collection)
+
+	scene := gui.New().
+		WithTitle(title).
+		WithDimensions(width+(float32(cs)*gui.Inset), height+(float32(cs)*gui.Inset))
+	scene.WithLayout(layout.Vertical)
 
 	i := 0
+	// TODO : fix multiple scene elements (check bench example)
+	// TODO : get event / rect border from draw context
 	for _, cc := range collection {
 		g := f32.Rectangle{
-			Min: f32.Point{X: (float32(i) * w) + 100, Y: 50},
-			Max: f32.Point{X: (float32(i) * w) + w, Y: 2 * height * 95 / 100},
+			Min: f32.Point{X: gui.Inset, Y: gui.Inset},
+			Max: f32.Point{X: width * 180 / 100, Y: height * 180 / 100},
 		}
 		coll := clearCollections(cc)
 		if len(coll) > 0 {
-			graph := entity.NewGraph(coll[0].Labels(), &g)
+			graph := entity.NewChart(coll[0].Labels(), &g)
 			for _, c := range coll {
 				graph.AddCollection(uimodel.NewSeries(c))
 			}
-			scene.Add(graph)
+			scene.AddItem(graph)
 			i++
 		}
 	}

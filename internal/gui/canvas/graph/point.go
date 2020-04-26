@@ -1,7 +1,9 @@
-package entity
+package graph
 
 import (
+	"github/drakos74/oremi/internal/gui"
 	"github/drakos74/oremi/internal/gui/canvas"
+	"github/drakos74/oremi/internal/gui/style"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -12,11 +14,11 @@ import (
 // Point is a point element
 type Point struct {
 	canvas.RawElement
-	canvas.RawDynamicElement
+	gui.InteractiveElement
 	w     float32
 	c     f32.Point
 	rect  *f32.Rectangle
-	label Label
+	label style.Label
 }
 
 // NewPoint creates a new point
@@ -25,11 +27,11 @@ func NewPoint(label string, center f32.Point) *Point {
 	rect := calculateRect(center, w)
 	p := &Point{
 		*canvas.NewRawElement(),
-		*canvas.NewDynamicElement(rect),
+		*gui.NewInteractiveElement(rect),
 		w,
 		center,
 		&rect,
-		NewLabel(center, label),
+		style.NewLabel(center, label),
 	}
 	return p
 }
