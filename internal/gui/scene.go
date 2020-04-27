@@ -70,9 +70,9 @@ func (s *Scene) Draw(gtx *layout.Context, th *material.Theme) error {
 }
 
 // Event propagates a scene event
-func (s *Scene) Event(e *pointer.Event) (redraw bool, err error) {
+func (s *Scene) Event(gtx *layout.Context, e *pointer.Event) (redraw bool, err error) {
 	for i := 0; i < len(s.items); i++ {
-		if s.get(i).event(e) {
+		if s.get(i).event(gtx, e) {
 			redraw = true
 		}
 	}
@@ -110,7 +110,7 @@ func loop(scene *Scene, w *app.Window) error {
 			}
 			e.Frame(gtx.Ops)
 		case pointer.Event:
-			redraw, err := scene.Event(&e)
+			redraw, err := scene.Event(gtx, &e)
 			if err != nil {
 				// TODO : handle error so that it ignores instead of failing
 				// consider using custom error type

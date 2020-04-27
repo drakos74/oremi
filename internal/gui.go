@@ -12,14 +12,25 @@ import (
 	"gioui.org/f32"
 )
 
-func DrawScene(title string, width, height float32, collection map[string][]datamodel.Collection) {
+func DrawScene(title string, axis layout.Axis, width, height float32, collection map[string][]datamodel.Collection) {
 
 	cs := len(collection)
 
 	scene := gui.New().
 		WithTitle(title).
 		WithDimensions(width+(float32(cs)*gui.Inset), height+(float32(cs)*gui.Inset))
-	scene.WithLayout(layout.Vertical)
+	scene.WithLayout(axis)
+
+	// TODO : fix the layout and collection widths/heights properly
+	w := 2 * width
+	h := 2 * height
+
+	switch axis {
+	case layout.Horizontal:
+		w = w / float32(cs)
+	case layout.Vertical:
+		h = h / float32(cs)
+	}
 
 	i := 0
 	// TODO : fix multiple scene elements (check bench example)
@@ -27,7 +38,7 @@ func DrawScene(title string, width, height float32, collection map[string][]data
 	for _, cc := range collection {
 		g := f32.Rectangle{
 			Min: f32.Point{X: gui.Inset, Y: gui.Inset},
-			Max: f32.Point{X: width * 180 / 100, Y: height * 180 / 100},
+			Max: f32.Point{X: w, Y: h},
 		}
 		coll := clearCollections(cc)
 		if len(coll) > 0 {

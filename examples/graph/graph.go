@@ -4,11 +4,13 @@ import (
 	oremi "github/drakos74/oremi/internal"
 	"github/drakos74/oremi/internal/data/model"
 	"github/drakos74/oremi/internal/data/source/generator"
+
+	"gioui.org/layout"
 )
 
 func main() {
 
-	oremi.DrawScene("math", 1200, 800,
+	oremi.DrawScene("math", layout.Vertical, 1200, 800,
 		map[string][]model.Collection{
 			"mathematical-functions": {
 				generator.NewPolynomial(120, 0, 0.1, 0, 1),

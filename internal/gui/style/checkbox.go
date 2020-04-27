@@ -1,7 +1,7 @@
 package style
 
 import (
-	"github/drakos74/oremi/internal/gui/canvas"
+	"github/drakos74/oremi/internal/gui"
 
 	"gioui.org/layout"
 	"gioui.org/widget"
@@ -9,13 +9,13 @@ import (
 )
 
 type Checkbox struct {
-	canvas.RawElement
+	gui.RawItem
 	checkbox *widget.CheckBox
 }
 
 func NewCheckBox() *Checkbox {
 	return &Checkbox{
-		*canvas.NewRawElement(),
+		*gui.NewRawItem(),
 		new(widget.CheckBox),
 	}
 }

@@ -7,6 +7,8 @@ import (
 	oremi "github/drakos74/oremi/internal"
 	"github/drakos74/oremi/internal/data/model"
 	"log"
+
+	"gioui.org/layout"
 )
 
 func main() {
@@ -23,7 +25,7 @@ func main() {
 		log.Fatalf("could not parse benchamrks from file '%s': %v", *file, err)
 	}
 
-	oremi.DrawScene("benchmarks", 1600, 800,
+	oremi.DrawScene("benchmarks", layout.Horizontal, 1400, 800,
 		map[string][]model.Collection{
 			"cpu":    {benchmarks.Extract(bench.Operations, bench.Latency)},
 			"memory": {benchmarks.Extract(bench.Heap, bench.Throughput)},

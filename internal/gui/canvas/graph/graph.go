@@ -1,7 +1,6 @@
 package graph
 
 import (
-	"errors"
 	"fmt"
 	"github/drakos74/oremi/internal/gui/canvas"
 	uimath "github/drakos74/oremi/internal/gui/canvas/math"
@@ -11,7 +10,6 @@ import (
 	"strings"
 
 	"gioui.org/f32"
-	"gioui.org/io/pointer"
 	"github.com/google/uuid"
 )
 
@@ -19,7 +17,6 @@ const scale = 1000
 
 // Chart is a graph object designed to hold all the graph contents as child elements
 type Chart struct {
-	canvas.RawElement
 	uimath.CoordinateMapper
 	canvas.Container
 	scale       *uimath.LinearMapper
@@ -47,7 +44,6 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 	})
 
 	g := &Chart{
-		*canvas.NewRawElement(),
 		*uiCoordinates,
 		*canvas.NewContainer(rect),
 		dataCoordinates,
@@ -61,20 +57,6 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 	g.AxisY(labels[1])
 	//g.AddItem(style.NewCheckBox())
 	return g
-}
-
-// Event propagates the events to all child elements of the graph
-func (g *Chart) Event(e *pointer.Event) (bool, error) {
-	if g.Container.IsActive() {
-		p := f32.Point{
-			X: g.DeScaleX()(e.Position.X),
-			Y: g.DeScaleY()(e.Position.Y),
-		}
-		// TODO : remove or enable only with appropriate config or action
-		println(fmt.Sprintf("cursor=%v", p))
-	}
-
-	return g.Container.Event(e)
 }
 
 // Point adds a point to the graph
@@ -95,7 +77,12 @@ func (g *Chart) AxisX(label string) {
 		Y: g.ScaleY()(0),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	g.Add(NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X, 10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale)))
+	xAxis := NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X)
+	g.Add(xAxis)
+	delimiters := xAxis.Delimiters(10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale))
+	for _, d := range delimiters {
+		g.Add(d)
+	}
 }
 
 // AxisY adds a y axis to the graph
@@ -105,14 +92,19 @@ func (g *Chart) AxisY(label string) {
 		Y: g.ScaleY()(scale),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	g.Add(NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y, 10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale)))
+	yAxis := NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y)
+	g.Add(yAxis)
+	delimiters := yAxis.Delimiters(10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale))
+	for _, d := range delimiters {
+		g.Add(d)
+	}
 }
 
 // model validation methods
 func (g *Chart) fitsModel(collection model.Collection) error {
 	for i, label := range collection.Labels() {
 		if g.labels[i] != label {
-			return errors.New(fmt.Sprintf("model inconsistency on labels %v vs %v", g.labels, collection.Labels()))
+			return fmt.Errorf("model inconsistency on labels %v vs %v", g.labels, collection.Labels())
 		}
 	}
 	return nil
@@ -127,8 +119,6 @@ func (g *Chart) AddCollection(collection model.Collection) {
 		log.Fatalf("cannot add collection to graph: %v", err)
 	}
 
-	// TODO : we assume here that minimum is always '0'.
-	// TODO : we should handle also negative values
 	bound := collection.Bounds()
 
 	newMax := g.scale.Max(bound.Max)

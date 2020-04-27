@@ -6,6 +6,8 @@ import (
 	"github/drakos74/oremi/internal/data/model"
 	"github/drakos74/oremi/internal/data/source/web"
 	"log"
+
+	"gioui.org/layout"
 )
 
 func main() {
@@ -26,6 +28,6 @@ func main() {
 	}
 
 	// draw the data collection
-	oremi.DrawScene("covid-19", 1200, 800, map[string][]model.Collection{"covid-19": {collection}})
+	oremi.DrawScene("covid-19", layout.Vertical, 1200, 800, map[string][]model.Collection{"covid-19": {collection}})
 
 }
