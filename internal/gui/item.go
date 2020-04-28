@@ -21,25 +21,15 @@ type item struct {
 	event func(gtx *layout.Context, e *pointer.Event) bool
 }
 
-// AddItem accepts a generic object that must have one of the following properties :
+// Add accepts a generic object that must have one of the following properties :
 // - implement
-func (items items) AddItem(v interface{}) func() {
+func (items items) AddItem(v interface{}) (uint32, func()) {
 	item := newItem(v)
 	id := uuid.New().ID()
 	items[id] = item
-	return func() {
+	return id, func() {
 		delete(items, id)
 	}
-}
-
-func (items items) idx() []uint32 {
-	idx := make([]uint32, len(items))
-	i := 0
-	for itemIndex := range items {
-		idx[i] = itemIndex
-		i++
-	}
-	return idx
 }
 
 // TODO : measure interface perf overhead usage
@@ -83,37 +73,51 @@ func newItem(v interface{}) item {
 			return ok
 		}
 	}
+	if view, ok := v.(*View); ok {
+		eventAction = func(gtx *layout.Context, e *pointer.Event) bool {
+			ok, err := view.Event(gtx, e)
+			if err != nil {
+				log.Fatalf("error encountered during Event Propagation: %v", err)
+			}
+			return ok
+		}
+	}
 	item.event = eventAction
+
 	return item
 }
 
-type list struct {
+type itemsList struct {
 	items
 	index []uint32
 }
 
-func (list *list) AddItem(v interface{}) func() {
-	rmv := list.items.AddItem(v)
-	list.index = list.items.idx()
-	return func() {
-		rmv()
-		rk := -1
-		for i, id := range list.index {
-			if _, exists := list.items[id]; !exists {
-				rk = i
-				break
+func (list *itemsList) Add(vv ...interface{}) func() {
+	rmvs := make([]func(), len(vv))
+	for i, v := range vv {
+		id, rmv := list.items.AddItem(v)
+		list.index = append(list.index, id)
+		rmvs[i] = func() {
+			rmv()
+			rk := -1
+			for i, id := range list.index {
+				if _, exists := list.items[id]; !exists {
+					rk = i
+					break
+				}
 			}
+			copy(list.index[rk:], list.index[rk+1:])    // Shift a[i+1:] left one index.
+			list.index = list.index[:len(list.index)-1] // Truncate slice.
 		}
-		copy(list.index[rk:], list.index[rk+1:])    // Shift a[i+1:] left one index.
-		list.index = list.index[:len(list.index)-1] // Truncate slice.
+	}
+	return func() {
+		for _, rm := range rmvs {
+			rm()
+		}
 	}
 }
 
-func (list list) idx() []uint32 {
-	return list.index
-}
-
-func (list list) get(i int) item {
+func (list itemsList) get(i int) item {
 	return list.items[list.index[i]]
 }
 
@@ -188,23 +192,17 @@ type DrawItem interface {
 	Draw(gtx *layout.Context, th *material.Theme) error
 }
 
-// TODO : cleanup interface
 // InteractiveItem represents an interactive UI element
 type InteractiveItem interface {
 	Event(gtx *layout.Context, e *pointer.Event) (f32.Point, bool, error)
 	Enable(gtx *layout.Context, th *material.Theme) error
-	Activate() error
-	Reset() error
-	IsActive() bool
 }
 
 // InteractiveElement is the base implementation of a dynamic element
 type InteractiveElement struct {
 	Item
 	Area
-	active bool
-	halo   int
-	offset f32.Point
+	halo int
 }
 
 // NewInteractiveElement creates a new dynamic element
@@ -233,29 +231,12 @@ func (item *InteractiveElement) Event(gtx *layout.Context, e *pointer.Event) (f3
 	if len(events) > 0 {
 		event := events[0]
 		if ev, ok := event.(pointer.Event); ok {
-			return ev.Position, true, item.Activate()
+			return ev.Position, true, nil
 		}
 		return f32.Point{}, false, nil
 	}
-	if item.IsActive() && len(events) == 0 {
-		return f32.Point{}, true, item.Reset()
+	if len(events) == 0 {
+		return f32.Point{}, true, nil
 	}
 	return f32.Point{}, false, nil
-}
-
-// Activate triggers the activation of a dynamic element
-func (item *InteractiveElement) Activate() error {
-	item.active = true
-	return nil
-}
-
-// Reset resets the state of an dynamic element
-func (item *InteractiveElement) Reset() error {
-	item.active = false
-	return nil
-}
-
-// IsActive returns the activation status of a dynamic element
-func (item *InteractiveElement) IsActive() bool {
-	return item.active
 }

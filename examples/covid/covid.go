@@ -3,7 +3,6 @@ package main
 import (
 	"github/drakos74/oremi/covid"
 	oremi "github/drakos74/oremi/internal"
-	"github/drakos74/oremi/internal/data/model"
 	"github/drakos74/oremi/internal/data/source/web"
 	"log"
 
@@ -22,12 +21,12 @@ func main() {
 	infections := covid.Parse(b)
 
 	// create a data collection out of the gathered data
-	collection, err := infections.ToCollection()
+	collections, err := infections.ToCollection()
 	if err != nil {
 		log.Fatalf("could not convert data to collection: %v", err)
 	}
 
 	// draw the data collection
-	oremi.DrawScene("covid-19", layout.Vertical, 1200, 800, map[string][]model.Collection{"covid-19": {collection}})
+	oremi.DrawGraph("covid-19", layout.Vertical, 1600, 800, collections)
 
 }

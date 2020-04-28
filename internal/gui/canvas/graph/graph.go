@@ -5,6 +5,7 @@ import (
 	"github/drakos74/oremi/internal/gui/canvas"
 	uimath "github/drakos74/oremi/internal/gui/canvas/math"
 	"github/drakos74/oremi/internal/gui/model"
+	"github/drakos74/oremi/internal/gui/style"
 	"log"
 	"math"
 	"strings"
@@ -20,7 +21,6 @@ type Chart struct {
 	uimath.CoordinateMapper
 	canvas.Container
 	scale       *uimath.LinearMapper
-	rect        *f32.Rectangle
 	collections map[uint32]model.Collection
 	points      map[uint32][]uint32
 	labels      []string
@@ -47,7 +47,6 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 		*uiCoordinates,
 		*canvas.NewContainer(rect),
 		dataCoordinates,
-		rect,
 		make(map[uint32]model.Collection),
 		make(map[uint32][]uint32),
 		labels,
@@ -55,18 +54,18 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 	// TODO : we should make the labels flexible and connected to the appropriate dimensions of the vectors
 	g.AxisX(labels[0])
 	g.AxisY(labels[1])
-	//g.AddItem(style.NewCheckBox())
+	//g.Add(style.NewCheckBox())
 	return g
 }
 
 // Point adds a point to the graph
-func (g *Chart) Point(label string, p f32.Point) uint32 {
+func (g *Chart) Point(label string, p f32.Point, control canvas.Control) uint32 {
 	sp := f32.Point{
 		X: g.ScaleX()(p.X),
 		Y: g.ScaleY()(p.Y),
 	}
 	point := NewPoint(label, sp)
-	g.Add(point)
+	g.Add(point, control)
 	return point.ID()
 }
 
@@ -77,11 +76,12 @@ func (g *Chart) AxisX(label string) {
 		Y: g.ScaleY()(0),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	xAxis := NewAxisX(label, so, g.rect.Max.X-g.rect.Min.X)
-	g.Add(xAxis)
+	rect := g.Rect()
+	xAxis := NewAxisX(label, so, rect.Max.X-rect.Min.X)
+	g.Add(xAxis, nil)
 	delimiters := xAxis.Delimiters(10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale))
 	for _, d := range delimiters {
-		g.Add(d)
+		g.Add(d, nil)
 	}
 }
 
@@ -92,11 +92,12 @@ func (g *Chart) AxisY(label string) {
 		Y: g.ScaleY()(scale),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
-	yAxis := NewAxisY(label, so, g.rect.Max.Y-g.rect.Min.Y)
-	g.Add(yAxis)
+	rect := g.Rect()
+	yAxis := NewAxisY(label, so, rect.Max.Y-rect.Min.Y)
+	g.Add(yAxis, nil)
 	delimiters := yAxis.Delimiters(10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale))
 	for _, d := range delimiters {
-		g.Add(d)
+		g.Add(d, nil)
 	}
 }
 
@@ -113,7 +114,8 @@ func (g *Chart) fitsModel(collection model.Collection) error {
 // computation specific methods
 
 // AddCollection adds a series model collection to the graph
-func (g *Chart) AddCollection(collection model.Collection) {
+func (g *Chart) AddCollection(title string, collection model.Collection) canvas.Control {
+	// TODO : add title to graph
 	err := g.fitsModel(collection)
 	if err != nil {
 		log.Fatalf("cannot add collection to graph: %v", err)
@@ -127,14 +129,14 @@ func (g *Chart) AddCollection(collection model.Collection) {
 	if newMax || newMin {
 		for sId, c := range g.collections {
 			g.remove(sId)
-			g.add(sId, c)
+			g.add(sId, title, c)
 		}
 	}
 
 	sId := uuid.New().ID()
-	g.add(sId, collection)
+	ctrl := g.add(sId, title, collection)
 	g.collections[sId] = collection
-
+	return ctrl
 }
 
 // remove removes a collection and it's points
@@ -146,9 +148,10 @@ func (g *Chart) remove(sId uint32) {
 }
 
 // add scales the model series into canvas coordinates scale
-func (g *Chart) add(sId uint32, collection model.Collection) {
+func (g *Chart) add(sId uint32, title string, collection model.Collection) canvas.Control {
 	collection.Reset()
 	var points = make([]uint32, collection.Size())
+	controller := style.NewCheckBox(title)
 	i := 0
 	for {
 		point, ok, hasNext := collection.Next()
@@ -158,7 +161,7 @@ func (g *Chart) add(sId uint32, collection model.Collection) {
 				f32.Point{
 					X: g.scale.ScaleX()(point.X),
 					Y: g.scale.ScaleY()(point.Y),
-				})
+				}, controller)
 			points[i] = id
 		}
 		if !hasNext {
@@ -167,6 +170,7 @@ func (g *Chart) add(sId uint32, collection model.Collection) {
 		i++
 	}
 	g.points[sId] = points
+	return controller
 }
 
 func label(labels []string) string {

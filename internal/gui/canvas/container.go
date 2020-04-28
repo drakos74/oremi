@@ -12,10 +12,8 @@ import (
 
 // Container represents a ui scene
 type Container struct {
-	gui.Item
-	gui.Area
+	*gui.InteractiveElement
 	CompoundElement
-	gui.InteractiveItem
 }
 
 func (c *Container) Layout(ops *op.Ops) layout.Dimensions {
@@ -28,18 +26,18 @@ func (c *Container) Layout(ops *op.Ops) layout.Dimensions {
 // Draw propagates the draw call to all the scene chldren
 func (c *Container) Draw(gtx *layout.Context, th *material.Theme) error {
 	gtx.Dimensions = c.Layout(gtx.Ops)
-	_, err := c.Elements(DrawAction(gtx, th))
+	_, err := c.Elements(gtx, DrawAction(gtx, th))
 	return err
 }
 
 // Event propagates a pointer event to all the scene chldren
 func (c *Container) Event(gtx *layout.Context, e *pointer.Event) (f32.Point, bool, error) {
-	p, ok, err := c.InteractiveItem.Event(gtx, e)
+	p, ok, err := c.InteractiveElement.Event(gtx, e)
 	if err != nil {
 		return p, false, err
 	}
 	if ok {
-		kk, err := c.Elements(EventAction(p))
+		kk, err := c.Elements(gtx, EventAction(p))
 		return p, kk, err
 	}
 	return p, false, nil
@@ -48,9 +46,7 @@ func (c *Container) Event(gtx *layout.Context, e *pointer.Event) (f32.Point, boo
 // NewContainer creates a new scene
 func NewContainer(rect *f32.Rectangle) *Container {
 	return &Container{
-		gui.NewRawItem(),
-		gui.Rect(rect),
-		NewCompoundElement(),
 		gui.NewInteractiveElement(rect),
+		NewCompoundElement(),
 	}
 }

@@ -22,18 +22,15 @@ const Inset = 50
 
 // Scene is the main container for the canvas objects
 type Scene struct {
-	list
-	title      string
-	width      float32
-	height     float32
-	layoutList *layout.List
+	*View
+	title  string
+	width  float32
+	height float32
 }
 
 func New() *Scene {
 	return &Scene{
-		list: list{
-			items: make(map[uint32]item),
-		},
+		View: NewView(layout.Vertical),
 	}
 }
 
@@ -50,33 +47,6 @@ func (s *Scene) WithDimensions(width, height float32) *Scene {
 	s.width = width
 	s.height = height
 	return s
-}
-
-func (s *Scene) WithLayout(orientation layout.Axis) {
-	s.layoutList = &layout.List{
-		Axis: orientation,
-	}
-}
-
-// live methods
-
-// Render renders all elements in the scene
-func (s *Scene) Draw(gtx *layout.Context, th *material.Theme) error {
-	// TODO : do recover
-	s.layoutList.Layout(gtx, len(s.items), func(i int) {
-		layout.UniformInset(unit.Dp(0)).Layout(gtx, s.get(i).draw(gtx, th))
-	})
-	return nil
-}
-
-// Event propagates a scene event
-func (s *Scene) Event(gtx *layout.Context, e *pointer.Event) (redraw bool, err error) {
-	for i := 0; i < len(s.items); i++ {
-		if s.get(i).event(gtx, e) {
-			redraw = true
-		}
-	}
-	return redraw, nil
 }
 
 // Run start the gui

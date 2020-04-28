@@ -1,5 +1,6 @@
 # gioui.org v0.0.0-20200403084947-efce78d414f3
 gioui.org/app
+gioui.org/app/headless
 gioui.org/app/internal/d3d11
 gioui.org/app/internal/egl
 gioui.org/app/internal/glimpl

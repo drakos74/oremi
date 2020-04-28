@@ -2,7 +2,6 @@ package canvas
 
 import (
 	"github/drakos74/oremi/internal/gui"
-	"log"
 
 	"gioui.org/f32"
 
@@ -13,9 +12,9 @@ import (
 // TODO : replace with items abstraction
 // CompoundElement represents an element that can have children
 type CompoundElement interface {
-	Add(elements ...gui.Item)
+	Add(element gui.Item, controller Control)
 	Remove(id uint32)
-	Elements(apply Action) (bool, error)
+	Elements(gtx *layout.Context, apply Action) (bool, error)
 }
 
 // Action defines an action to be applied to an Item
@@ -53,33 +52,52 @@ var EventAction = func(pointer f32.Point) func(element gui.Item) (bool, error) {
 	}
 }
 
+type Control interface {
+	IsActive(gtx *layout.Context) bool
+}
+
+type ActiveController struct {
+}
+
+func (c *ActiveController) IsActive(gtx *layout.Context) bool {
+	return true
+}
+
 // RawCompundElement is the base implementation for a compund element
 type RawCompoundElement struct {
 	elements map[uint32]gui.Item
+	controls map[uint32]Control
 }
 
-// AddItem adds a new element to the group
-func (s *RawCompoundElement) Add(elements ...gui.Item) {
-	//t := reflect.TypeOf(element)
-	// TODO : use to make better use of generic actions, without doing the casting
-	if elements == nil {
-		log.Fatalf("cannot add nil elements")
+// NewCompoundElement creates a new compound element
+func NewCompoundElement() *RawCompoundElement {
+	return &RawCompoundElement{
+		elements: make(map[uint32]gui.Item),
+		controls: make(map[uint32]Control),
 	}
-	for _, element := range elements {
-		s.elements[element.ID()] = element
+}
+
+// Add adds a new element to the group
+func (s *RawCompoundElement) Add(element gui.Item, controller Control) {
+	s.elements[element.ID()] = element
+	if controller == nil {
+		controller = &ActiveController{}
 	}
+	s.controls[element.ID()] = controller
 }
 
 // Elements applies the specified action to all child elements
-func (s *RawCompoundElement) Elements(apply Action) (bool, error) {
+func (s *RawCompoundElement) Elements(gtx *layout.Context, apply Action) (bool, error) {
 	var d bool
-	for _, e := range s.elements {
-		done, err := apply(e)
-		if err != nil {
-			return false, err
-		}
-		if done {
-			d = true
+	for id, e := range s.elements {
+		if s.controls[id].IsActive(gtx) {
+			done, err := apply(e)
+			if err != nil {
+				return false, err
+			}
+			if done {
+				d = true
+			}
 		}
 	}
 	return d, nil
@@ -93,11 +111,6 @@ func (s *RawCompoundElement) Remove(id uint32) {
 // Size returns the number of child elements
 func (s *RawCompoundElement) Size() int {
 	return len(s.elements)
-}
-
-// NewCompoundElement creates a new compound element
-func NewCompoundElement() *RawCompoundElement {
-	return &RawCompoundElement{elements: make(map[uint32]gui.Item)}
 }
 
 // DynamicElement represents an interactive UI element

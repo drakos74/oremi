@@ -23,16 +23,27 @@ func (i Infection) ToVector() (model.Vector, error) {
 
 type Infections []Infection
 
-func (i Infections) ToCollection() (model.Collection, error) {
-	series := model.NewSeries("date", "cases", "deaths", "tests", "cases/mil")
+func (i Infections) ToCollection() (map[string]map[string]model.Collection, error) {
+	series := make(map[string]*model.Series)
 	for _, infection := range i {
+		s, ok := series[infection.Country]
+		if !ok {
+			s = model.NewSeries("date", "cases", "deaths", "tests", "cases/mil")
+		}
 		v, err := infection.ToVector()
 		if err != nil {
 			return nil, fmt.Errorf("could not convert `%v` to vector: %w", infection, err)
 		}
-		series.Add(v)
+		s.Add(v)
+		series[infection.Country] = s
 	}
-	return series, nil
+
+	// transform to collections
+	collections := make(map[string]model.Collection)
+	for key, collection := range series {
+		collections[key] = collection
+	}
+	return map[string]map[string]model.Collection{"covid-19": collections}, nil
 }
 
 type Date struct {

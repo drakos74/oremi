@@ -10,13 +10,13 @@ import (
 
 func main() {
 
-	oremi.DrawScene("math", layout.Vertical, 1200, 800,
-		map[string][]model.Collection{
-			"mathematical-functions": {
-				generator.NewPolynomial(120, 0, 0.1, 0, 1),
-				generator.NewLine(200, 2, 0, 0.1),
-				generator.NewLine(200, 1, 0, 0.1),
-				generator.NewExponential(500, 1, 0.01),
+	oremi.DrawGraph("math", layout.Vertical, 1200, 800,
+		map[string]map[string]model.Collection{
+			"math": {
+				"polynomial":  generator.NewPolynomial(120, 0, 0.1, 0, 1),
+				"linear-1":    generator.NewLine(200, 2, 0, 0.1),
+				"linear-2":    generator.NewLine(200, 1, 0, 0.1),
+				"exponential": generator.NewExponential(500, 1, 0.01),
 			},
 		},
 	)

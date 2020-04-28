@@ -69,3 +69,9 @@ var dimensionValidator = func(e1, e2 Vector) {
 		log.Fatalf("vectors don't have the same dimension %v vs %v", e1, e2)
 	}
 }
+
+type Filter func(Collection) bool
+
+var Size Filter = func(collection Collection) bool {
+	return collection.Size() > 0
+}

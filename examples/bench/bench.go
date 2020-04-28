@@ -25,10 +25,10 @@ func main() {
 		log.Fatalf("could not parse benchamrks from file '%s': %v", *file, err)
 	}
 
-	oremi.DrawScene("benchmarks", layout.Horizontal, 1400, 800,
-		map[string][]model.Collection{
-			"cpu":    {benchmarks.Extract(bench.Operations, bench.Latency)},
-			"memory": {benchmarks.Extract(bench.Heap, bench.Throughput)},
+	oremi.DrawGraph("benchmarks", layout.Horizontal, 1400, 800,
+		map[string]map[string]model.Collection{
+			"cpu":    {"latency": benchmarks.Extract(bench.Operations, bench.Latency)},
+			"memory": {"allocations": benchmarks.Extract(bench.Heap, bench.Throughput)},
 		},
 	)
 }

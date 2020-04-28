@@ -1,8 +1,11 @@
 package oremi
 
 import (
+	"fmt"
 	datamodel "github/drakos74/oremi/internal/data/model"
+	"github/drakos74/oremi/internal/gui/canvas"
 	uimodel "github/drakos74/oremi/internal/gui/model"
+	"github/drakos74/oremi/internal/gui/style"
 
 	"gioui.org/layout"
 
@@ -12,17 +15,16 @@ import (
 	"gioui.org/f32"
 )
 
-func DrawScene(title string, axis layout.Axis, width, height float32, collection map[string][]datamodel.Collection) {
+func DrawGraph(title string, axis layout.Axis, width, height float32, collection map[string]map[string]datamodel.Collection) {
 
 	cs := len(collection)
 
 	scene := gui.New().
 		WithTitle(title).
 		WithDimensions(width+(float32(cs)*gui.Inset), height+(float32(cs)*gui.Inset))
-	scene.WithLayout(axis)
 
 	// TODO : fix the layout and collection widths/heights properly
-	w := 2 * width
+	w := 2*width - 600
 	h := 2 * height
 
 	switch axis {
@@ -32,34 +34,59 @@ func DrawScene(title string, axis layout.Axis, width, height float32, collection
 		h = h / float32(cs)
 	}
 
+	graphView := gui.NewView(layout.Horizontal)
+
+	autoSuggest := gui.NewView(layout.Vertical).WithMaxHeight(30)
+	autoSuggest.Add(style.NewInput())
+
+	controllerView := gui.NewView(layout.Vertical)
+	controllerView.Add(autoSuggest)
+	controlView := gui.NewView(layout.Vertical).WithMaxHeight(height + gui.Inset)
+	controllerView.Add(controlView)
+
+	screenView := gui.NewView(layout.Horizontal).WithMaxHeight(height + gui.Inset)
+
 	i := 0
-	// TODO : fix multiple scene elements (check bench example)
-	// TODO : get event / rect border from draw context
-	for _, cc := range collection {
+	controllers := make([]canvas.Control, 0)
+	for title, cc := range collection {
 		g := f32.Rectangle{
 			Min: f32.Point{X: gui.Inset, Y: gui.Inset},
 			Max: f32.Point{X: w, Y: h},
 		}
-		coll := clearCollections(cc)
-		if len(coll) > 0 {
-			graph := entity.NewChart(coll[0].Labels(), &g)
-			for _, c := range coll {
-				graph.AddCollection(uimodel.NewSeries(c))
+
+		c, l := filterCollections(cc, datamodel.Size)
+
+		if len(c) > 0 {
+			graph := entity.NewChart(l, &g)
+			for subtitle, c := range c {
+				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c))
+				controllers = append(controllers, controller)
 			}
-			scene.AddItem(graph)
+			graphView.Add(graph)
 			i++
 		}
 	}
 
+	for _, controller := range controllers {
+		controlView.Add(controller)
+	}
+
+	screenView.Add(graphView, controllerView)
+
+	scene.Add(screenView)
+
 	scene.Run()
 }
 
-func clearCollections(collections []datamodel.Collection) []datamodel.Collection {
-	c := make([]datamodel.Collection, 0)
-	for _, col := range collections {
-		if col.Size() > 0 {
-			c = append(c, col)
+func filterCollections(collections map[string]datamodel.Collection, filter datamodel.Filter) (map[string]datamodel.Collection, []string) {
+	cc := make(map[string]datamodel.Collection, 0)
+	var labels []string
+	for key, collection := range collections {
+		if filter(collection) {
+			cc[key] = collection
+			// TODO : be more strict on the labels
+			labels = collection.Labels()
 		}
 	}
-	return c
+	return cc, labels
 }
