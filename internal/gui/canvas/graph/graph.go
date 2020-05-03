@@ -213,7 +213,7 @@ func (g *Chart) AddCollection(title string, col model.Collection, active bool) c
 
 		exec := func(cnl chan struct{}, e func()) {
 			select {
-			case <-time.Tick(66 * time.Millisecond):
+			case <-time.NewTicker(66 * time.Millisecond).C:
 				e()
 			case <-cnl:
 				return

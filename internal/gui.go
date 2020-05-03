@@ -6,6 +6,9 @@ import (
 	"github/drakos74/oremi/internal/gui/canvas"
 	uimodel "github/drakos74/oremi/internal/gui/model"
 	"github/drakos74/oremi/internal/gui/style"
+	"regexp"
+	"strings"
+	"time"
 
 	"gioui.org/layout"
 
@@ -36,16 +39,6 @@ func DrawGraph(title string, axis layout.Axis, width, height float32, collection
 
 	graphView := gui.NewView(layout.Horizontal)
 
-	autoSuggest := gui.NewView(layout.Vertical).WithMaxHeight(30)
-	autoSuggest.Add(style.NewInput())
-
-	controllerView := gui.NewView(layout.Vertical)
-	controllerView.Add(autoSuggest)
-	controlView := gui.NewView(layout.Vertical).WithMaxHeight(height + gui.Inset)
-	controllerView.Add(controlView)
-
-	screenView := gui.NewView(layout.Horizontal).WithMaxHeight(height + gui.Inset)
-
 	i := 0
 	controllers := make([]canvas.Control, 0)
 	for title, cc := range collection {
@@ -68,6 +61,57 @@ func DrawGraph(title string, axis layout.Axis, width, height float32, collection
 		}
 	}
 
+	// TODO : layout the autosuggest and checkbox group at the top
+	autoSuggestInput := style.NewInput()
+
+	go func() {
+
+		exec := func(cnl chan struct{}, e func()) {
+			select {
+			case <-time.NewTicker(66 * time.Millisecond).C:
+				e()
+			case <-cnl:
+				return
+			}
+		}
+
+		cnl := make(chan struct{})
+
+		for {
+			select {
+			case event := <-autoSuggestInput.Trigger():
+				select {
+				case cnl <- struct{}{}:
+				default:
+				}
+				// TODO: fix the acknowledgement path
+				//controller.Ack() <- canvas.Ack
+				go exec(cnl, func() {
+					text := strings.ReplaceAll(event.S, " ", "(.*?)")
+					for _, controller := range controllers {
+						// TODO : create a proper separate interface for this actions
+						if match, _ := regexp.MatchString(text, controller.Label()); !match {
+							controller.Disable()
+						} else {
+							controller.Enable()
+						}
+					}
+				})
+			}
+		}
+
+	}()
+
+	autoSuggest := gui.NewView(layout.Vertical).WithMaxHeight(30)
+	autoSuggest.Add(autoSuggestInput)
+
+	controllerView := gui.NewView(layout.Vertical)
+	controllerView.Add(autoSuggest)
+	controlView := gui.NewView(layout.Vertical).WithMaxHeight(height + gui.Inset)
+	controllerView.Add(controlView)
+
+	screenView := gui.NewView(layout.Horizontal).WithMaxHeight(height + gui.Inset)
+
 	group := style.NewCheckboxControlGroup(true, controllers...)
 	controlView.Add(group)
 	for _, controller := range controllers {
@@ -83,7 +127,7 @@ func DrawGraph(title string, axis layout.Axis, width, height float32, collection
 }
 
 func filterCollections(collections map[string]datamodel.Collection, filter datamodel.Filter) (map[string]datamodel.Collection, []string) {
-	cc := make(map[string]datamodel.Collection, 0)
+	cc := make(map[string]datamodel.Collection)
 	var labels []string
 	for key, collection := range collections {
 		if filter(collection) {

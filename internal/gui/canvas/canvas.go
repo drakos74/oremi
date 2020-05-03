@@ -19,6 +19,7 @@ const (
 type Event struct {
 	T EventType
 	A bool
+	S string
 }
 
 type Events chan Event
@@ -27,6 +28,9 @@ type EventReceiver <-chan Event
 
 // Control is an interface for a controller on the elements behavior
 type Control interface {
+	Label() string
+	Disable()
+	Enable()
 	IsActive() bool
 	Set(active bool)
 	Trigger() EventReceiver
@@ -35,6 +39,18 @@ type Control interface {
 
 // ActiveController is a dummy always 'active' controller
 type ActiveController struct {
+}
+
+func (c *ActiveController) Label() string {
+	return ""
+}
+
+func (c *ActiveController) Disable() {
+	// nothing to do
+}
+
+func (c *ActiveController) Enable() {
+	// nothing to do
 }
 
 func (c *ActiveController) Trigger() EventReceiver {
