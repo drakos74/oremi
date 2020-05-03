@@ -2,6 +2,7 @@ package math
 
 import (
 	"fmt"
+	"math"
 
 	"gioui.org/f32"
 )
@@ -161,10 +162,16 @@ func (l *LinearMapper) Min(pmin f32.Point) bool {
 }
 
 // NewLinearMapper creates a new linearly scale calculation element
-func NewLinearMapper(scale float32, min, max f32.Point) *LinearMapper {
+func NewLinearMapper(scale float32) *LinearMapper {
 	return &LinearMapper{
-		min:   &min,
-		max:   &max,
+		min: &f32.Point{
+			X: math.MaxFloat32,
+			Y: math.MaxFloat32,
+		},
+		max: &f32.Point{
+			X: 0,
+			Y: 0,
+		},
 		scale: scale,
 	}
 }

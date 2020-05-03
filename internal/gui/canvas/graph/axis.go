@@ -103,7 +103,7 @@ func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
 // Delimiter is an axis child element representing a value on the respective axis
 type Delimiter struct {
 	gui.Item
-	*canvas.RawDynamicElement
+	canvas.DynamicElement
 	label     style.Label
 	transform func() float32
 }

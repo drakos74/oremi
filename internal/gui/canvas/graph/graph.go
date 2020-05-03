@@ -7,8 +7,10 @@ import (
 	"github/drakos74/oremi/internal/gui/model"
 	"github/drakos74/oremi/internal/gui/style"
 	"log"
-	"math"
 	"strings"
+
+	"gioui.org/layout"
+	"gioui.org/widget/material"
 
 	"gioui.org/f32"
 	"github.com/google/uuid"
@@ -21,9 +23,23 @@ type Chart struct {
 	uimath.CoordinateMapper
 	canvas.Container
 	scale       *uimath.LinearMapper
-	collections map[uint32]model.Collection
+	collections map[uint32]collection
+	controllers map[uint32]canvas.Control
 	points      map[uint32][]uint32
+	xaxis       axis
+	yaxis       axis
 	labels      []string
+	trigger     map[canvas.Event]bool
+}
+
+type axis struct {
+	axis       uint32
+	delimiters []uint32
+}
+
+type collection struct {
+	model.Collection
+	title string
 }
 
 // NewChart creates a new graph
@@ -34,28 +50,77 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 	}
 
 	uiCoordinates := uimath.NewRawCalcElement(rect, scale)
-
-	dataCoordinates := uimath.NewLinearMapper(scale, f32.Point{
-		X: math.MaxFloat32,
-		Y: math.MaxFloat32,
-	}, f32.Point{
-		X: 0,
-		Y: 0,
-	})
+	dataCoordinates := uimath.NewLinearMapper(scale)
 
 	g := &Chart{
 		*uiCoordinates,
 		*canvas.NewContainer(rect),
 		dataCoordinates,
-		make(map[uint32]model.Collection),
+		make(map[uint32]collection),
+		make(map[uint32]canvas.Control),
 		make(map[uint32][]uint32),
+		axis{},
+		axis{},
 		labels,
+		make(map[canvas.Event]bool),
 	}
+
 	// TODO : we should make the labels flexible and connected to the appropriate dimensions of the vectors
-	g.AxisX(labels[0])
-	g.AxisY(labels[1])
+	g.Axis()
+
 	//g.Add(style.NewCheckBox())
 	return g
+}
+
+func (g *Chart) Axis() {
+	xaxis, xDelim := g.AxisX(g.labels[0])
+	yaxis, yDelim := g.AxisY(g.labels[1])
+
+	xaxisDelims := make([]uint32, len(xDelim))
+	yaxisDelims := make([]uint32, len(yDelim))
+
+	for i, xd := range xDelim {
+		xaxisDelims[i] = xd.ID()
+	}
+
+	for j, yd := range yDelim {
+		yaxisDelims[j] = yd.ID()
+	}
+	g.xaxis = axis{
+		axis:       xaxis.ID(),
+		delimiters: xaxisDelims,
+	}
+	g.yaxis = axis{
+		axis:       yaxis.ID(),
+		delimiters: yaxisDelims,
+	}
+}
+
+func (g *Chart) RemoveAxis() {
+	xaxis := g.xaxis
+	g.Remove(xaxis.axis)
+	for _, xd := range xaxis.delimiters {
+		g.Remove(xd)
+	}
+
+	yaxis := g.yaxis
+	g.Remove(yaxis.axis)
+	for _, yd := range yaxis.delimiters {
+		g.Remove(yd)
+	}
+}
+
+func (g *Chart) Draw(gtx *layout.Context, th *material.Theme) error {
+	for ev, tr := range g.trigger {
+		if tr {
+			switch ev {
+			case canvas.Trigger:
+				g.Refresh()
+				g.trigger[ev] = false
+			}
+		}
+	}
+	return g.Container.Draw(gtx, th)
 }
 
 // Point adds a point to the graph
@@ -70,7 +135,7 @@ func (g *Chart) Point(label string, p f32.Point, control canvas.Control) uint32 
 }
 
 // AxisX adds an x axis to the graph
-func (g *Chart) AxisX(label string) {
+func (g *Chart) AxisX(label string) (*Axis, []*Delimiter) {
 	so := f32.Point{
 		X: g.ScaleX()(0),
 		Y: g.ScaleY()(0),
@@ -83,10 +148,11 @@ func (g *Chart) AxisX(label string) {
 	for _, d := range delimiters {
 		g.Add(d, nil)
 	}
+	return xAxis, delimiters
 }
 
 // AxisY adds a y axis to the graph
-func (g *Chart) AxisY(label string) {
+func (g *Chart) AxisY(label string) (*Axis, []*Delimiter) {
 	so := f32.Point{
 		X: g.ScaleX()(0),
 		Y: g.ScaleY()(scale),
@@ -99,6 +165,7 @@ func (g *Chart) AxisY(label string) {
 	for _, d := range delimiters {
 		g.Add(d, nil)
 	}
+	return yAxis, delimiters
 }
 
 // model validation methods
@@ -114,44 +181,87 @@ func (g *Chart) fitsModel(collection model.Collection) error {
 // computation specific methods
 
 // AddCollection adds a series model collection to the graph
-func (g *Chart) AddCollection(title string, collection model.Collection) canvas.Control {
+func (g *Chart) AddCollection(title string, col model.Collection, active bool) canvas.Control {
 	// TODO : add title to graph
-	err := g.fitsModel(collection)
+	err := g.fitsModel(col)
 	if err != nil {
 		log.Fatalf("cannot add collection to graph: %v", err)
 	}
 
-	bound := collection.Bounds()
+	bound := col.Bounds()
 
 	newMax := g.scale.Max(bound.Max)
 	newMin := g.scale.Min(bound.Min)
 
 	if newMax || newMin {
+		// update the existing collections in terms of scaling
 		for sId, c := range g.collections {
+			// NOTE : this is a tricky point ... need to handle with care
 			g.remove(sId)
-			g.add(sId, title, c)
+			g.add(sId, c.title, c, g.controllers[sId])
 		}
 	}
 
+	controller := style.NewCheckBox(title, active)
 	sId := uuid.New().ID()
-	ctrl := g.add(sId, title, collection)
-	g.collections[sId] = collection
-	return ctrl
+	g.add(sId, title, col, controller)
+	g.collections[sId] = collection{
+		col,
+		title,
+	}
+	g.controllers[sId] = controller
+
+	go func() {
+		for {
+			select {
+			case event := <-controller.Trigger():
+				g.trigger[event] = true
+				// TODO: fix the acknowledgement path
+				//controller.Ack() <- canvas.Ack
+			}
+		}
+	}()
+
+	return controller
+}
+
+func (g *Chart) Refresh() {
+	// TODO : make this dynamic ready e.g. redrawn elements should keep their events
+	g.RemoveAxis()
+
+	g.scale = uimath.NewLinearMapper(scale)
+
+	for id, collection := range g.collections {
+		if g.controllers[id].IsActive() {
+			bound := collection.Bounds()
+			g.scale.Max(bound.Max)
+			g.scale.Min(bound.Min)
+		}
+	}
+
+	g.Axis()
+
+	for sId, c := range g.collections {
+		// NOTE : this is a tricky point ... need to handle with care
+		g.remove(sId)
+		g.add(sId, c.title, c, g.controllers[sId])
+	}
+
 }
 
 // remove removes a collection and it's points
 func (g *Chart) remove(sId uint32) {
 	for _, pId := range g.points[sId] {
 		g.Remove(pId)
+		g.Remove(pId)
 	}
 	delete(g.points, sId)
 }
 
 // add scales the model series into canvas coordinates scale
-func (g *Chart) add(sId uint32, title string, collection model.Collection) canvas.Control {
+func (g *Chart) add(sId uint32, title string, collection model.Collection, controller canvas.Control) {
 	collection.Reset()
 	var points = make([]uint32, collection.Size())
-	controller := style.NewCheckBox(title)
 	i := 0
 	for {
 		point, ok, hasNext := collection.Next()
@@ -170,7 +280,6 @@ func (g *Chart) add(sId uint32, title string, collection model.Collection) canva
 		i++
 	}
 	g.points[sId] = points
-	return controller
 }
 
 func label(labels []string) string {

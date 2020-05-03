@@ -3,9 +3,10 @@ package gui
 import (
 	"log"
 
+	"gioui.org/io/pointer"
+
 	"gioui.org/font/gofont"
 
-	"gioui.org/io/pointer"
 	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/widget/material"
@@ -80,6 +81,7 @@ func loop(scene *Scene, w *app.Window) error {
 			}
 			e.Frame(gtx.Ops)
 		case pointer.Event:
+			// TODO : dont make use of gtx from this scope
 			redraw, err := scene.Event(gtx, &e)
 			if err != nil {
 				// TODO : handle error so that it ignores instead of failing

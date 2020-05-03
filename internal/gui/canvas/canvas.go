@@ -9,12 +9,96 @@ import (
 	"gioui.org/widget/material"
 )
 
+type Event int
+
+const (
+	Trigger Event = iota + 1
+	Ack
+)
+
+type EventEmitter chan<- Event
+type EventReceiver <-chan Event
+
+// Control is an interface for a controller on the elements behavior
+type Control interface {
+	IsActive() bool
+	Trigger() EventReceiver
+	Ack() EventEmitter
+}
+
+// ActiveController is a dummy always 'active' controller
+type ActiveController struct {
+}
+
+func (c *ActiveController) Trigger() EventReceiver {
+	return make(chan Event)
+}
+
+func (c *ActiveController) Ack() EventEmitter {
+	return make(chan Event)
+}
+
+func (c *ActiveController) IsActive() bool {
+	return true
+}
+
 // TODO : replace with items abstraction
 // CompoundElement represents an element that can have children
 type CompoundElement interface {
 	Add(element gui.Item, controller Control)
 	Remove(id uint32)
 	Elements(gtx *layout.Context, apply Action) (bool, error)
+}
+
+// RawCompundElement is the base implementation for a compund element
+type RawCompoundElement struct {
+	elements map[uint32]gui.Item
+	controls map[uint32]Control
+}
+
+// NewCompoundElement creates a new compound element
+func NewCompoundElement() *RawCompoundElement {
+	return &RawCompoundElement{
+		elements: make(map[uint32]gui.Item),
+		controls: make(map[uint32]Control),
+	}
+}
+
+// Add adds a new element to the group
+func (s *RawCompoundElement) Add(element gui.Item, controller Control) {
+	s.elements[element.ID()] = element
+	if controller == nil {
+		controller = &ActiveController{}
+	}
+	s.controls[element.ID()] = controller
+}
+
+// Elements applies the specified action to all child elements
+func (s *RawCompoundElement) Elements(gtx *layout.Context, apply Action) (bool, error) {
+	var d bool
+	for id, e := range s.elements {
+		// propagate events only for child elements that are active
+		if s.controls[id].IsActive() {
+			done, err := apply(e)
+			if err != nil {
+				return false, err
+			}
+			if done {
+				d = true
+			}
+		}
+	}
+	return d, nil
+}
+
+// Remove removes an element by id from the group
+func (s *RawCompoundElement) Remove(id uint32) {
+	delete(s.elements, id)
+}
+
+// Size returns the number of child elements
+func (s *RawCompoundElement) Size() int {
+	return len(s.elements)
 }
 
 // Action defines an action to be applied to an Item
@@ -52,69 +136,9 @@ var EventAction = func(pointer f32.Point) func(element gui.Item) (bool, error) {
 	}
 }
 
-type Control interface {
-	IsActive(gtx *layout.Context) bool
-}
-
-type ActiveController struct {
-}
-
-func (c *ActiveController) IsActive(gtx *layout.Context) bool {
-	return true
-}
-
-// RawCompundElement is the base implementation for a compund element
-type RawCompoundElement struct {
-	elements map[uint32]gui.Item
-	controls map[uint32]Control
-}
-
-// NewCompoundElement creates a new compound element
-func NewCompoundElement() *RawCompoundElement {
-	return &RawCompoundElement{
-		elements: make(map[uint32]gui.Item),
-		controls: make(map[uint32]Control),
-	}
-}
-
-// Add adds a new element to the group
-func (s *RawCompoundElement) Add(element gui.Item, controller Control) {
-	s.elements[element.ID()] = element
-	if controller == nil {
-		controller = &ActiveController{}
-	}
-	s.controls[element.ID()] = controller
-}
-
-// Elements applies the specified action to all child elements
-func (s *RawCompoundElement) Elements(gtx *layout.Context, apply Action) (bool, error) {
-	var d bool
-	for id, e := range s.elements {
-		if s.controls[id].IsActive(gtx) {
-			done, err := apply(e)
-			if err != nil {
-				return false, err
-			}
-			if done {
-				d = true
-			}
-		}
-	}
-	return d, nil
-}
-
-// Remove removes an element by id from the group
-func (s *RawCompoundElement) Remove(id uint32) {
-	delete(s.elements, id)
-}
-
-// Size returns the number of child elements
-func (s *RawCompoundElement) Size() int {
-	return len(s.elements)
-}
-
 // DynamicElement represents an interactive UI element
 type DynamicElement interface {
+	gui.Area
 	Event(pointer f32.Point) (bool, error)
 	Activate() error
 	Reset() error

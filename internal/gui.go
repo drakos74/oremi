@@ -59,7 +59,8 @@ func DrawGraph(title string, axis layout.Axis, width, height float32, collection
 		if len(c) > 0 {
 			graph := entity.NewChart(l, &g)
 			for subtitle, c := range c {
-				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c))
+				// TODO : unify building of controls with the collection call
+				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c), true)
 				controllers = append(controllers, controller)
 			}
 			graphView.Add(graph)
