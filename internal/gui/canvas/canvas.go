@@ -9,19 +9,26 @@ import (
 	"gioui.org/widget/material"
 )
 
-type Event int
+type EventType int
 
 const (
-	Trigger Event = iota + 1
+	Trigger EventType = iota + 1
 	Ack
 )
 
+type Event struct {
+	T EventType
+	A bool
+}
+
+type Events chan Event
 type EventEmitter chan<- Event
 type EventReceiver <-chan Event
 
 // Control is an interface for a controller on the elements behavior
 type Control interface {
 	IsActive() bool
+	Set(active bool)
 	Trigger() EventReceiver
 	Ack() EventEmitter
 }
@@ -40,6 +47,10 @@ func (c *ActiveController) Ack() EventEmitter {
 
 func (c *ActiveController) IsActive() bool {
 	return true
+}
+
+func (c *ActiveController) Set(active bool) {
+	// nothing to do
 }
 
 // TODO : replace with items abstraction

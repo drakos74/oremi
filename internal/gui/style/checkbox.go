@@ -37,9 +37,13 @@ func (c *CheckboxControl) Draw(gtx *layout.Context, th *material.Theme) error {
 	active := c.active
 	c.active = c.checkbox.Checked(gtx)
 	if c.active != active {
-		c.trigger <- canvas.Trigger
+		c.trigger <- canvas.Event{canvas.Trigger, c.active}
 	}
 	return nil
+}
+
+func (c *CheckboxControl) Set(active bool) {
+	c.checkbox.SetChecked(active)
 }
 
 func (c *CheckboxControl) IsActive() bool {
@@ -52,4 +56,30 @@ func (c *CheckboxControl) Trigger() canvas.EventReceiver {
 
 func (c *CheckboxControl) Ack() canvas.EventEmitter {
 	return c.ack
+}
+
+type CheckboxControlGroup struct {
+	CheckboxControl
+	cboxes []canvas.Control
+}
+
+func NewCheckboxControlGroup(active bool, control ...canvas.Control) *CheckboxControlGroup {
+	cb := NewCheckBox("all", active)
+	group := &CheckboxControlGroup{
+		CheckboxControl: *cb,
+		cboxes:          control,
+	}
+
+	go func() {
+		for {
+			select {
+			case <-cb.Trigger():
+				for _, checkbox := range group.cboxes {
+					checkbox.Set(group.CheckboxControl.active)
+				}
+			}
+		}
+	}()
+
+	return group
 }

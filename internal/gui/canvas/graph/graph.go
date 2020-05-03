@@ -8,6 +8,7 @@ import (
 	"github/drakos74/oremi/internal/gui/style"
 	"log"
 	"strings"
+	"time"
 
 	"gioui.org/layout"
 	"gioui.org/widget/material"
@@ -29,7 +30,7 @@ type Chart struct {
 	xaxis       axis
 	yaxis       axis
 	labels      []string
-	trigger     map[canvas.Event]bool
+	trigger     canvas.Events
 }
 
 type axis struct {
@@ -62,10 +63,9 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 		axis{},
 		axis{},
 		labels,
-		make(map[canvas.Event]bool),
+		make(canvas.Events),
 	}
 
-	// TODO : we should make the labels flexible and connected to the appropriate dimensions of the vectors
 	g.Axis()
 
 	//g.Add(style.NewCheckBox())
@@ -73,6 +73,7 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 }
 
 func (g *Chart) Axis() {
+	// TODO : we should make the labels flexible and connected to the appropriate dimensions of the vectors
 	xaxis, xDelim := g.AxisX(g.labels[0])
 	yaxis, yDelim := g.AxisY(g.labels[1])
 
@@ -111,14 +112,11 @@ func (g *Chart) RemoveAxis() {
 }
 
 func (g *Chart) Draw(gtx *layout.Context, th *material.Theme) error {
-	for ev, tr := range g.trigger {
-		if tr {
-			switch ev {
-			case canvas.Trigger:
-				g.Refresh()
-				g.trigger[ev] = false
-			}
-		}
+	select {
+	case <-g.trigger:
+		g.Refresh()
+	default:
+		//nothing to process
 	}
 	return g.Container.Draw(gtx, th)
 }
@@ -182,7 +180,6 @@ func (g *Chart) fitsModel(collection model.Collection) error {
 
 // AddCollection adds a series model collection to the graph
 func (g *Chart) AddCollection(title string, col model.Collection, active bool) canvas.Control {
-	// TODO : add title to graph
 	err := g.fitsModel(col)
 	if err != nil {
 		log.Fatalf("cannot add collection to graph: %v", err)
@@ -211,15 +208,35 @@ func (g *Chart) AddCollection(title string, col model.Collection, active bool) c
 	}
 	g.controllers[sId] = controller
 
+	// TODO : abstract the default trigger receiver logic into dedicated interface e.g. Loader with Refresh
 	go func() {
+
+		exec := func(cnl chan struct{}, e func()) {
+			select {
+			case <-time.Tick(66 * time.Millisecond):
+				e()
+			case <-cnl:
+				return
+			}
+		}
+
+		cnl := make(chan struct{})
+
 		for {
 			select {
 			case event := <-controller.Trigger():
-				g.trigger[event] = true
+				select {
+				case cnl <- struct{}{}:
+				default:
+				}
 				// TODO: fix the acknowledgement path
 				//controller.Ack() <- canvas.Ack
+				go exec(cnl, func() {
+					g.trigger <- event
+				})
 			}
 		}
+
 	}()
 
 	return controller

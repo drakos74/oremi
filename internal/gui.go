@@ -68,8 +68,11 @@ func DrawGraph(title string, axis layout.Axis, width, height float32, collection
 		}
 	}
 
+	group := style.NewCheckboxControlGroup(true, controllers...)
+	controlView.Add(group)
 	for _, controller := range controllers {
 		controlView.Add(controller)
+
 	}
 
 	screenView.Add(graphView, controllerView)
