@@ -77,6 +77,15 @@ func TestFloat32_Panic(t *testing.T) {
 
 }
 
+func TestFloat32_LowPrecisionNoPanic(t *testing.T) {
+
+	// if we dont divide by 100 code will cause panic
+	i := 1.000000000000002
+
+	Float32(i)
+
+}
+
 func TestFloat32_NoPanic(t *testing.T) {
 
 	// if we dont divide by 100 code will cause panic

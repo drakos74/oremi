@@ -240,11 +240,14 @@ func safe(f float32) float32 {
 	return f
 }
 
+const PrecisionThreshold = 0.001
+
 // Float32 converts to a float32 and panics if there is loss of precision
 func Float32(f float64) float32 {
 	x := float32(f)
-	if float64(x) != f {
-		panic(fmt.Sprintf("precision loss for %f vs %f", f, x))
+	l := math.Abs(float64(x) - f)
+	if l > PrecisionThreshold {
+		panic(fmt.Sprintf("precision loss for f64:%f vs f32:%f is %v", f, x, l))
 	}
 	return x
 }
