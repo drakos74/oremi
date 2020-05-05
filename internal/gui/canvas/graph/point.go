@@ -1,14 +1,13 @@
 package graph
 
 import (
-	"github/drakos74/oremi/internal/gui"
-	"github/drakos74/oremi/internal/gui/canvas"
-	"github/drakos74/oremi/internal/gui/style"
-
-	"gioui.org/op/paint"
+	"github.com/drakos74/oremi/internal/gui"
+	"github.com/drakos74/oremi/internal/gui/canvas"
+	"github.com/drakos74/oremi/internal/gui/style"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
+	"gioui.org/op/paint"
 	"gioui.org/widget/material"
 )
 

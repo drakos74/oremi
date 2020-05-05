@@ -2,18 +2,18 @@ package graph
 
 import (
 	"fmt"
-	"github/drakos74/oremi/internal/gui/canvas"
-	uimath "github/drakos74/oremi/internal/gui/canvas/math"
-	"github/drakos74/oremi/internal/gui/model"
-	"github/drakos74/oremi/internal/gui/style"
 	"log"
 	"strings"
 	"time"
 
-	"gioui.org/layout"
-	"gioui.org/widget/material"
+	"github.com/drakos74/oremi/internal/gui/canvas"
+	uimath "github.com/drakos74/oremi/internal/gui/canvas/math"
+	"github.com/drakos74/oremi/internal/gui/model"
+	"github.com/drakos74/oremi/internal/gui/style"
 
 	"gioui.org/f32"
+	"gioui.org/layout"
+	"gioui.org/widget/material"
 	"github.com/google/uuid"
 )
 
@@ -222,19 +222,16 @@ func (g *Chart) AddCollection(title string, col model.Collection, active bool) c
 
 		cnl := make(chan struct{})
 
-		for {
+		for event := range controller.Trigger() {
 			select {
-			case event := <-controller.Trigger():
-				select {
-				case cnl <- struct{}{}:
-				default:
-				}
-				// TODO: fix the acknowledgement path
-				//controller.Ack() <- canvas.Ack
-				go exec(cnl, func() {
-					g.trigger <- event
-				})
+			case cnl <- struct{}{}:
+			default:
 			}
+			// TODO: fix the acknowledgement path
+			//controller.Ack() <- canvas.Ack
+			go exec(cnl, func() {
+				g.trigger <- event
+			})
 		}
 
 	}()
@@ -275,6 +272,7 @@ func (g *Chart) remove(sId uint32) {
 	delete(g.points, sId)
 }
 
+// TODO : allow for dynamically changing collections e.g. adding data points on the graph
 // add scales the model series into canvas coordinates scale
 func (g *Chart) add(sId uint32, title string, collection model.Collection, controller canvas.Control) {
 	collection.Reset()

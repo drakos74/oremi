@@ -2,33 +2,34 @@ package oremi
 
 import (
 	"fmt"
-	datamodel "github/drakos74/oremi/internal/data/model"
-	"github/drakos74/oremi/internal/gui/canvas"
-	uimodel "github/drakos74/oremi/internal/gui/model"
-	"github/drakos74/oremi/internal/gui/style"
 	"regexp"
 	"strings"
 	"time"
 
+	datamodel "github.com/drakos74/oremi/internal/data/model"
+	"github.com/drakos74/oremi/internal/gui/canvas"
+	uimodel "github.com/drakos74/oremi/internal/gui/model"
+	"github.com/drakos74/oremi/internal/gui/style"
+
 	"gioui.org/layout"
 
-	"github/drakos74/oremi/internal/gui"
-	entity "github/drakos74/oremi/internal/gui/canvas/graph"
+	"github.com/drakos74/oremi/internal/gui"
+	entity "github.com/drakos74/oremi/internal/gui/canvas/graph"
 
 	"gioui.org/f32"
 )
 
-func DrawGraph(title string, axis layout.Axis, width, height float32, collection map[string]map[string]datamodel.Collection) {
+func Draw(title string, axis layout.Axis, width, height float32, collection map[string]map[string]datamodel.Collection) {
 
 	cs := len(collection)
 
 	scene := gui.New().
 		WithTitle(title).
-		WithDimensions(width+(float32(cs)*gui.Inset), height+(float32(cs)*gui.Inset))
+		WithDimensions(width+(float32(cs)*(gui.Inset+10)), height+(float32(cs)*(gui.Inset+10)))
 
 	// TODO : fix the layout and collection widths/heights properly
 	w := 2*width - 600
-	h := 2 * height
+	h := 2*height - 50
 
 	switch axis {
 	case layout.Horizontal:
@@ -37,7 +38,7 @@ func DrawGraph(title string, axis layout.Axis, width, height float32, collection
 		h = h / float32(cs)
 	}
 
-	graphView := gui.NewView(layout.Horizontal)
+	graphView := gui.NewView(axis)
 
 	i := 0
 	controllers := make([]canvas.Control, 0)
@@ -77,27 +78,24 @@ func DrawGraph(title string, axis layout.Axis, width, height float32, collection
 
 		cnl := make(chan struct{})
 
-		for {
+		for event := range autoSuggestInput.Trigger() {
 			select {
-			case event := <-autoSuggestInput.Trigger():
-				select {
-				case cnl <- struct{}{}:
-				default:
-				}
-				// TODO: fix the acknowledgement path
-				//controller.Ack() <- canvas.Ack
-				go exec(cnl, func() {
-					text := strings.ReplaceAll(event.S, " ", "(.*?)")
-					for _, controller := range controllers {
-						// TODO : create a proper separate interface for this actions
-						if match, _ := regexp.MatchString(text, controller.Label()); !match {
-							controller.Disable()
-						} else {
-							controller.Enable()
-						}
-					}
-				})
+			case cnl <- struct{}{}:
+			default:
 			}
+			// TODO: fix the acknowledgement path
+			//controller.Ack() <- canvas.Ack
+			go exec(cnl, func() {
+				text := strings.ReplaceAll(event.S, " ", "(.*?)")
+				for _, controller := range controllers {
+					// TODO : create a proper separate interface for this actions
+					if match, _ := regexp.MatchString(text, controller.Label()); !match {
+						controller.Disable()
+					} else {
+						controller.Enable()
+					}
+				}
+			})
 		}
 
 	}()

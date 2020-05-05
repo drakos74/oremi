@@ -1,4 +1,4 @@
-module github/drakos74/oremi
+module github.com/drakos74/oremi
 
 go 1.13
 

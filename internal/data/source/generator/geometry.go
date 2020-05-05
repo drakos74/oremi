@@ -1,7 +1,7 @@
 package generator
 
 import (
-	"github/drakos74/oremi/internal/data/model"
+	"github.com/drakos74/oremi/internal/data/model"
 )
 
 // Line is a collection of points adhering to a graph evolution model in 2D space

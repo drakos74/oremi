@@ -2,9 +2,10 @@ package generator
 
 import (
 	"fmt"
-	"github/drakos74/oremi/internal/data/model"
 	"log"
 	"math"
+
+	"github.com/drakos74/oremi/internal/data/model"
 )
 
 // Y is a general abstraction of a mathematical function

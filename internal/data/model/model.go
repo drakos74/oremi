@@ -52,6 +52,7 @@ type Iterator interface {
 	Reset()
 }
 
+// Collection represents a collection of data points
 type Collection interface {
 	Iterator
 	Size() int

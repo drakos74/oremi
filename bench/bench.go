@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github/drakos74/oremi/internal/data/model"
+	"github.com/drakos74/oremi/internal/data/model"
 )
 
 const (

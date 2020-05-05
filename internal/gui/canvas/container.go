@@ -1,7 +1,7 @@
 package canvas
 
 import (
-	"github/drakos74/oremi/internal/gui"
+	"github.com/drakos74/oremi/internal/gui"
 
 	"gioui.org/f32"
 	"gioui.org/io/pointer"

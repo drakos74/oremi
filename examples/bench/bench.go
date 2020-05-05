@@ -3,10 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github/drakos74/oremi/bench"
-	oremi "github/drakos74/oremi/internal"
-	"github/drakos74/oremi/internal/data/model"
 	"log"
+
+	"github.com/drakos74/oremi/bench"
+	oremi "github.com/drakos74/oremi/internal"
+	"github.com/drakos74/oremi/internal/data/model"
 
 	"gioui.org/layout"
 )
@@ -25,7 +26,7 @@ func main() {
 		log.Fatalf("could not parse benchamrks from file '%s': %v", *file, err)
 	}
 
-	oremi.DrawGraph("benchmarks", layout.Horizontal, 1400, 800,
+	oremi.Draw("benchmarks", layout.Horizontal, 1400, 800,
 		map[string]map[string]model.Collection{
 			"cpu":    {"latency": benchmarks.Extract(bench.Operations, bench.Latency)},
 			"memory": {"allocations": benchmarks.Extract(bench.Heap, bench.Throughput)},

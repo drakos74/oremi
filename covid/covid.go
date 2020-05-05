@@ -2,8 +2,9 @@ package covid
 
 import (
 	"fmt"
-	"github/drakos74/oremi/internal/data/model"
 	"time"
+
+	"github.com/drakos74/oremi/internal/data/model"
 
 	"github.com/gocarina/gocsv"
 )
@@ -76,12 +77,5 @@ func Parse(file []byte) Infections {
 		infections[i] = *c
 	}
 
-	// TODO : remove test code for reducing data points
-	//infections := make([]Infection, 0)
-	//for _, c := range cases {
-	//	if c.Country == "Greece" {
-	//		infections = append(infections, *c)
-	//	}
-	//}
 	return infections
 }

@@ -1,8 +1,8 @@
 package style
 
 import (
-	"github/drakos74/oremi/internal/gui"
-	"github/drakos74/oremi/internal/gui/canvas"
+	"github.com/drakos74/oremi/internal/gui"
+	"github.com/drakos74/oremi/internal/gui/canvas"
 
 	"gioui.org/layout"
 	"gioui.org/widget"

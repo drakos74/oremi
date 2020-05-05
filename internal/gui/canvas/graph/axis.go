@@ -2,10 +2,11 @@ package graph
 
 import (
 	"fmt"
-	"github/drakos74/oremi/internal/gui"
-	"github/drakos74/oremi/internal/gui/canvas"
-	"github/drakos74/oremi/internal/gui/canvas/math"
-	"github/drakos74/oremi/internal/gui/style"
+
+	"github.com/drakos74/oremi/internal/gui"
+	"github.com/drakos74/oremi/internal/gui/canvas"
+	"github.com/drakos74/oremi/internal/gui/canvas/math"
+	"github.com/drakos74/oremi/internal/gui/style"
 
 	"gioui.org/f32"
 	"gioui.org/layout"

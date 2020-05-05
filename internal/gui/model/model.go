@@ -1,7 +1,8 @@
 package model
 
 import (
-	"github/drakos74/oremi/internal/data/model"
+	"github.com/drakos74/oremi/internal/data/model"
+	"github.com/drakos74/oremi/internal/gui/canvas/math"
 
 	"gioui.org/f32"
 )
@@ -47,8 +48,8 @@ func (s Series) Next() (point *LabeledPoint, ok, next bool) {
 		return &LabeledPoint{
 			// TODO : make the coordinate choice connected to the labels and the graph options in general
 			Point: f32.Point{
-				X: float32(p.Coords[0]),
-				Y: float32(p.Coords[1]),
+				X: math.Float32(p.Coords[0]),
+				Y: math.Float32(p.Coords[1]),
 			},
 			Label: p.Label,
 		}, true, next

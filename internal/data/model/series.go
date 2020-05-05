@@ -17,8 +17,8 @@ type Series struct {
 }
 
 // NewSeries creates a new series of the specified dimension
-func NewSeries(x ...string) *Series {
-	dim := len(x)
+func NewSeries(labels ...string) *Series {
+	dim := len(labels)
 	min := make([]float64, dim)
 	for i := range min {
 		min[i] = math.MaxFloat64
@@ -28,7 +28,7 @@ func NewSeries(x ...string) *Series {
 		vectors: make([]Vector, 0),
 		min:     NewVector([]string{"min"}, min...),
 		max:     NewVector([]string{"max"}, make([]float64, dim)...),
-		labels:  x,
+		labels:  labels,
 	}
 }
 

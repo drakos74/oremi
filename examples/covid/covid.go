@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github/drakos74/oremi/covid"
-	oremi "github/drakos74/oremi/internal"
-	"github/drakos74/oremi/internal/data/source/web"
 	"log"
+
+	"github.com/drakos74/oremi/covid"
+	oremi "github.com/drakos74/oremi/internal"
+	"github.com/drakos74/oremi/internal/data/source/web"
 
 	"gioui.org/layout"
 )
@@ -27,6 +28,6 @@ func main() {
 	}
 
 	// draw the data collection
-	oremi.DrawGraph("covid-19", layout.Vertical, 1600, 800, collections)
+	oremi.Draw("covid-19", layout.Vertical, 1600, 800, collections)
 
 }

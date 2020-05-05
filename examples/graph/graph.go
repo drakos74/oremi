@@ -1,16 +1,16 @@
 package main
 
 import (
-	oremi "github/drakos74/oremi/internal"
-	"github/drakos74/oremi/internal/data/model"
-	"github/drakos74/oremi/internal/data/source/generator"
+	oremi "github.com/drakos74/oremi/internal"
+	"github.com/drakos74/oremi/internal/data/model"
+	"github.com/drakos74/oremi/internal/data/source/generator"
 
 	"gioui.org/layout"
 )
 
 func main() {
 
-	oremi.DrawGraph("math", layout.Vertical, 1200, 800,
+	oremi.Draw("math", layout.Vertical, 1200, 800,
 		map[string]map[string]model.Collection{
 			"math": {
 				"polynomial":  generator.NewPolynomial(120, 0, 0.1, 0, 1),

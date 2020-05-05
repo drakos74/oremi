@@ -2,7 +2,8 @@ package generator
 
 import (
 	"fmt"
-	"github/drakos74/oremi/internal/data/model"
+
+	"github.com/drakos74/oremi/internal/data/model"
 )
 
 type Sequence struct {
