@@ -163,15 +163,20 @@ func (l *LinearMapper) Min(pmin f32.Point) bool {
 
 // NewLinearMapper creates a new linearly scale calculation element
 func NewLinearMapper(scale float32) *LinearMapper {
+	return newLinearMapper(scale, f32.Point{
+		X: math.MaxFloat32,
+		Y: math.MaxFloat32,
+	}, f32.Point{
+		X: 0,
+		Y: 0,
+	})
+}
+
+// NewLinearMapper creates a new linearly scale calculation element
+func newLinearMapper(scale float32, min, max f32.Point) *LinearMapper {
 	return &LinearMapper{
-		min: &f32.Point{
-			X: math.MaxFloat32,
-			Y: math.MaxFloat32,
-		},
-		max: &f32.Point{
-			X: 0,
-			Y: 0,
-		},
+		min:   &min,
+		max:   &max,
 		scale: scale,
 	}
 }
@@ -184,7 +189,7 @@ func (l LinearMapper) DeScaleX() Transform {
 
 func (l LinearMapper) ScaleX() Transform {
 	return func(sx float32) float32 {
-		return l.scale * (sx - l.min.X) / (l.max.X - l.min.X)
+		return l.scale * (sx - l.min.X) / safe(l.max.X-l.min.X)
 	}
 }
 
@@ -196,7 +201,7 @@ func (l LinearMapper) DeScaleY() Transform {
 
 func (l LinearMapper) ScaleY() Transform {
 	return func(sy float32) float32 {
-		return l.scale * (sy - l.min.Y) / (l.max.Y - l.min.Y)
+		return l.scale * (sy - l.min.Y) / safe(l.max.Y-l.min.Y)
 	}
 }
 
@@ -214,7 +219,7 @@ func scaleX(rect f32.Rectangle, scale, value float32) float32 {
 
 // deScaleX calculates the 'relative' x - coordinate of a 'real' value
 func deScaleX(rect f32.Rectangle, scale, value float32) float32 {
-	return (value - rect.Min.X) / (rect.Max.X - rect.Min.X) * scale
+	return (value - rect.Min.X) / safe(rect.Max.X-rect.Min.X) * scale
 }
 
 // scaleY calculates the 'real' y - coordinate of a relative value to the grid
@@ -224,5 +229,22 @@ func scaleY(rect f32.Rectangle, scale, value float32) float32 {
 
 // deScaleY calculates the 'relative' y - coordinate of a 'real' value
 func deScaleY(rect f32.Rectangle, scale, value float32) float32 {
-	return scale - (value-rect.Min.Y)/(rect.Max.Y-rect.Min.Y)*scale
+	return scale - (value-rect.Min.Y)/safe(rect.Max.Y-rect.Min.Y)*scale
+}
+
+// safe makes sure that we dont encounter NaN when dividing by '0'
+func safe(f float32) float32 {
+	if f == 0 {
+		return 1
+	}
+	return f
+}
+
+// Float32 converts to a float32 and panics if there is loss of precision
+func Float32(f float64) float32 {
+	x := float32(f)
+	if float64(x) != f {
+		panic(fmt.Sprintf("precision loss for %f vs %f", f, x))
+	}
+	return x
 }

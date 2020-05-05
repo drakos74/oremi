@@ -3,6 +3,7 @@ package math
 import (
 	"math"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -11,7 +12,7 @@ import (
 
 func TestLinearScaleElementNoMin(t *testing.T) {
 
-	scale := NewLinearMapper(
+	scale := newLinearMapper(
 		1000,
 		f32.Point{
 			X: 0,
@@ -29,7 +30,7 @@ func TestLinearScaleElementNoMin(t *testing.T) {
 
 func TestLinearScaleElementWithMin(t *testing.T) {
 
-	scale := NewLinearMapper(
+	scale := newLinearMapper(
 		1000,
 		f32.Point{
 			X: 900,
@@ -60,4 +61,27 @@ func assertYMapper(t *testing.T, mapper Mapper, expected, actual float32) {
 	assert.Equal(t, float64(expected), math.Round(float64(y)))
 	sy := mapper.DeScaleY()(y)
 	assert.Equal(t, float32(actual), sy)
+}
+
+func TestFloat32_Panic(t *testing.T) {
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
+	i := time.Now().Unix()
+
+	Float32(float64(i))
+
+}
+
+func TestFloat32_NoPanic(t *testing.T) {
+
+	// if we dont divide by 100 code will cause panic
+	i := time.Now().Unix() / 100
+
+	Float32(float64(i))
+
 }
