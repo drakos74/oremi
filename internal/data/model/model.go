@@ -5,6 +5,8 @@ import (
 	"math"
 )
 
+// TODO : unify with math package
+
 // Vector defines a point in n dimensional space
 type Vector struct {
 	Label  []string
