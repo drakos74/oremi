@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/drakos74/oremi/internal/gui/canvas"
-	uimath "github.com/drakos74/oremi/internal/gui/canvas/math"
 	"github.com/drakos74/oremi/internal/gui/model"
 	"github.com/drakos74/oremi/internal/gui/style"
+	"github.com/drakos74/oremi/internal/math"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -21,9 +21,9 @@ const scale = 1000
 
 // Chart is a graph object designed to hold all the graph contents as child elements
 type Chart struct {
-	uimath.CoordinateMapper
+	math.CoordinateMapper
 	canvas.Container
-	scale       *uimath.LinearMapper
+	scale       *math.MonotonicMapper
 	collections map[uint32]collection
 	controllers map[uint32]canvas.Control
 	points      map[uint32][]uint32
@@ -50,8 +50,11 @@ func NewChart(labels []string, rect *f32.Rectangle) *Chart {
 		log.Fatalf("cannot draw 2-d graph with only one dimension: %v", labels)
 	}
 
-	uiCoordinates := uimath.NewRawCalcElement(rect, scale)
-	dataCoordinates := uimath.NewLinearMapper(scale)
+	uiCoordinates := math.NewRawCalcElement(&math.Rect{
+		Min: math.NewV(rect.Min.X, rect.Min.Y),
+		Max: math.NewV(rect.Max.X, rect.Max.Y),
+	}, scale)
+	dataCoordinates := math.NewMonotonicMapper(scale)
 
 	g := &Chart{
 		*uiCoordinates,
@@ -124,8 +127,8 @@ func (g *Chart) Draw(gtx *layout.Context, th *material.Theme) error {
 // Point adds a point to the graph
 func (g *Chart) Point(label string, p f32.Point, control canvas.Control) uint32 {
 	sp := f32.Point{
-		X: g.ScaleX()(p.X),
-		Y: g.ScaleY()(p.Y),
+		X: g.ScaleAt(0, math.Normal)(p.X),
+		Y: g.ScaleAt(1, math.Inverse)(p.Y),
 	}
 	point := NewPoint(label, sp)
 	g.Add(point, control)
@@ -135,14 +138,14 @@ func (g *Chart) Point(label string, p f32.Point, control canvas.Control) uint32 
 // AxisX adds an x axis to the graph
 func (g *Chart) AxisX(label string) (*Axis, []*Delimiter) {
 	so := f32.Point{
-		X: g.ScaleX()(0),
-		Y: g.ScaleY()(0),
+		X: g.ScaleAt(0, math.Normal)(0),
+		Y: g.ScaleAt(1, math.Inverse)(0),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
 	rect := g.Rect()
 	xAxis := NewAxisX(label, so, rect.Max.X-rect.Min.X)
 	g.Add(xAxis, nil)
-	delimiters := xAxis.Delimiters(10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale))
+	delimiters := xAxis.Delimiters(10, math.NewStackedMapper(g.CoordinateMapper, g.scale))
 	for _, d := range delimiters {
 		g.Add(d, nil)
 	}
@@ -152,14 +155,14 @@ func (g *Chart) AxisX(label string) (*Axis, []*Delimiter) {
 // AxisY adds a y axis to the graph
 func (g *Chart) AxisY(label string) (*Axis, []*Delimiter) {
 	so := f32.Point{
-		X: g.ScaleX()(0),
-		Y: g.ScaleY()(scale),
+		X: g.ScaleAt(0, math.Normal)(0),
+		Y: g.ScaleAt(1, math.Inverse)(scale),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
 	rect := g.Rect()
 	yAxis := NewAxisY(label, so, rect.Max.Y-rect.Min.Y)
 	g.Add(yAxis, nil)
-	delimiters := yAxis.Delimiters(10, uimath.NewStackedMapper(g.CoordinateMapper, g.scale))
+	delimiters := yAxis.Delimiters(10, math.NewStackedMapper(g.CoordinateMapper, g.scale))
 	for _, d := range delimiters {
 		g.Add(d, nil)
 	}
@@ -187,8 +190,8 @@ func (g *Chart) AddCollection(title string, col model.Collection, active bool) c
 
 	bound := col.Bounds()
 
-	newMax := g.scale.Max(bound.Max)
-	newMin := g.scale.Min(bound.Min)
+	newMax := g.scale.Max(math.NewV(bound.Max.X, bound.Max.Y))
+	newMin := g.scale.Min(math.NewV(bound.Min.X, bound.Min.Y))
 
 	if newMax || newMin {
 		// update the existing collections in terms of scaling
@@ -243,13 +246,13 @@ func (g *Chart) Refresh() {
 	// TODO : make this dynamic ready e.g. redrawn elements should keep their events
 	g.RemoveAxis()
 
-	g.scale = uimath.NewLinearMapper(scale)
+	g.scale = math.NewMonotonicMapper(scale)
 
 	for id, collection := range g.collections {
 		if g.controllers[id].IsActive() {
 			bound := collection.Bounds()
-			g.scale.Max(bound.Max)
-			g.scale.Min(bound.Min)
+			g.scale.Max(math.NewV(bound.Max.X, bound.Max.Y))
+			g.scale.Min(math.NewV(bound.Min.X, bound.Min.Y))
 		}
 	}
 
@@ -284,8 +287,8 @@ func (g *Chart) add(sId uint32, title string, collection model.Collection, contr
 			id := g.Point(
 				label(point.Label),
 				f32.Point{
-					X: g.scale.ScaleX()(point.X),
-					Y: g.scale.ScaleY()(point.Y),
+					X: g.scale.ScaleAt(0, math.Normal)(point.X),
+					Y: g.scale.ScaleAt(1, math.Inverse)(point.Y),
 				}, controller)
 			points[i] = id
 		}

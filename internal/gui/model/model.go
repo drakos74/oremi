@@ -2,7 +2,7 @@ package model
 
 import (
 	"github.com/drakos74/oremi/internal/data/model"
-	"github.com/drakos74/oremi/internal/gui/canvas/math"
+	"github.com/drakos74/oremi/internal/math"
 
 	"gioui.org/f32"
 )

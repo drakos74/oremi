@@ -5,8 +5,8 @@ import (
 
 	"github.com/drakos74/oremi/internal/gui"
 	"github.com/drakos74/oremi/internal/gui/canvas"
-	"github.com/drakos74/oremi/internal/gui/canvas/math"
 	"github.com/drakos74/oremi/internal/gui/style"
+	"github.com/drakos74/oremi/internal/math"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -59,14 +59,14 @@ func (axis Axis) Delimiters(delim int, calc math.Mapper) []*Delimiter {
 					X: axis.start.X + axis.length*d,
 					Y: axis.start.Y,
 				},
-				calc.DeScaleX())
+				calc.DeScaleAt(0, math.Normal))
 		case layout.Vertical:
 			delimiters[i] = NewDelimiterY(
 				f32.Point{
 					X: axis.start.X,
 					Y: axis.start.Y + axis.length*d,
 				},
-				calc.DeScaleY())
+				calc.DeScaleAt(1, math.Inverse))
 		}
 	}
 	return delimiters

@@ -6,21 +6,14 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"gioui.org/f32"
 )
 
 func TestLinearScaleElementNoMin(t *testing.T) {
 
-	scale := newLinearMapper(
+	scale := newMonotonicMapper(
 		1000,
-		f32.Point{
-			X: 0,
-			Y: 0,
-		}, f32.Point{
-			X: 100,
-			Y: 300,
-		})
+		NewV(0, 0),
+		NewV(100, 300))
 
 	assertXMapper(t, scale, 500, 50)
 
@@ -30,15 +23,10 @@ func TestLinearScaleElementNoMin(t *testing.T) {
 
 func TestLinearScaleElementWithMin(t *testing.T) {
 
-	scale := newLinearMapper(
+	scale := newMonotonicMapper(
 		1000,
-		f32.Point{
-			X: 900,
-			Y: 100,
-		}, f32.Point{
-			X: 1000,
-			Y: 300,
-		})
+		NewV(900, 100),
+		NewV(1000, 300))
 
 	assertXMapper(t, scale, 0, 900)
 	assertXMapper(t, scale, 1000, 1000)
@@ -50,16 +38,16 @@ func TestLinearScaleElementWithMin(t *testing.T) {
 }
 
 func assertXMapper(t *testing.T, mapper Mapper, expected, actual float32) {
-	x := mapper.ScaleX()(actual)
+	x := mapper.ScaleAt(0, Normal)(actual)
 	assert.Equal(t, expected, x)
-	sx := mapper.DeScaleX()(x)
+	sx := mapper.DeScaleAt(0, Normal)(x)
 	assert.Equal(t, actual, sx)
 }
 
 func assertYMapper(t *testing.T, mapper Mapper, expected, actual float32) {
-	y := mapper.ScaleY()(actual)
+	y := mapper.ScaleAt(1, Inverse)(actual)
 	assert.Equal(t, float64(expected), math.Round(float64(y)))
-	sy := mapper.DeScaleY()(y)
+	sy := mapper.DeScaleAt(1, Inverse)(y)
 	assert.Equal(t, float32(actual), sy)
 }
 
