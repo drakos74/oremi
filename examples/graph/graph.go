@@ -1,7 +1,7 @@
 package main
 
 import (
-	oremi "github.com/drakos74/oremi/internal"
+	"github.com/drakos74/oremi"
 	"github.com/drakos74/oremi/internal/data/model"
 	"github.com/drakos74/oremi/internal/data/source/generator"
 

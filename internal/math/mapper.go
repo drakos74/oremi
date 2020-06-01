@@ -205,7 +205,7 @@ func safe(f float32) float32 {
 	return f
 }
 
-const PrecisionThreshold = 0.001
+const PrecisionThreshold = 1
 
 // Float32 converts to a float32 and panics if there is loss of precision
 func Float32(f float64) float32 {

@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/drakos74/oremi"
 	"github.com/drakos74/oremi/covid"
-	oremi "github.com/drakos74/oremi/internal"
 	"github.com/drakos74/oremi/internal/data/source/web"
 
 	"gioui.org/layout"

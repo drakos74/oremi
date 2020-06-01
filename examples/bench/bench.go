@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/drakos74/oremi"
+
 	"github.com/drakos74/oremi/bench"
-	oremi "github.com/drakos74/oremi/internal"
 	"github.com/drakos74/oremi/internal/data/model"
 
 	"gioui.org/layout"
