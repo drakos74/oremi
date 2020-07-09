@@ -34,7 +34,7 @@ func main() {
 func gatherBenchmarks(benchmarks bench.Benchmarks) map[string]map[string]oremi.Collection {
 
 	graphs := make(map[string]bench.Benchmarks)
-	colors := bench.Palette()
+	colors := bench.Palette(10)
 
 	for _, b := range benchmarks {
 		label := b.Labels()[0]
