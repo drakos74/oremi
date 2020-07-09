@@ -28,12 +28,21 @@ type Benchmarks []Benchmark
 // Extract extracts Latency and operation information from the given benchmarks
 // x value to be used for the x-axis
 // y value to be used for the y-axis
-func (b Benchmarks) Extract(x, y string) *oremi.Collection {
+func (b Benchmarks) Extract(x, y string, filter map[string]float64) *oremi.Collection {
 	series := model.NewSeries(x, y)
 	for _, benchmark := range b {
 		x, hasX := benchmark.read(x)
 		y, hasY := benchmark.read(y)
-		if hasX && hasY {
+
+		match := true
+		for f, v := range filter {
+			value, err := benchmark.read(f)
+			if err && value != v {
+				match = false
+			}
+		}
+
+		if hasX && hasY && match {
 			series.Add(model.NewVector(benchmark.labels, x, y))
 		}
 	}

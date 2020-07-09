@@ -37,6 +37,7 @@ func gatherBenchmarks(benchmarks bench.Benchmarks) map[string]map[string]oremi.C
 	colors := bench.Palette()
 
 	for _, b := range benchmarks {
+		println(fmt.Sprintf("b = %v", b))
 		label := b.Labels()[0]
 		i := strings.Index(label, "/")
 		l := label[0:i]
@@ -50,7 +51,7 @@ func gatherBenchmarks(benchmarks bench.Benchmarks) map[string]map[string]oremi.C
 	collections["latency"] = make(map[string]oremi.Collection)
 	//collections["memory"] = make(map[string]oremi.Collection)
 	for label, graph := range graphs {
-		collections["latency"][label] = graph.Extract(bench.Operations, bench.Latency).
+		collections["latency"][label] = graph.Extract(bench.Operations, bench.Latency, map[string]float64{bench.Num: 1000}).
 			Color(colors.Get(label))
 		//collections["memory"][label] = graph.Extract(bench.Heap, bench.Throughput).
 		//	Color(colors.Get(label))
