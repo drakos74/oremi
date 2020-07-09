@@ -1,6 +1,8 @@
 package graph
 
 import (
+	"image/color"
+
 	"github.com/drakos74/oremi/internal/gui"
 	"github.com/drakos74/oremi/internal/gui/canvas"
 	"github.com/drakos74/oremi/internal/gui/style"
@@ -11,18 +13,19 @@ import (
 	"gioui.org/widget/material"
 )
 
-// Point is a point element
+// AddPoint is a point element
 type Point struct {
 	gui.Item
 	*canvas.RawDynamicElement
 	w     float32
 	c     f32.Point
 	label style.Label
+	color color.RGBA
 }
 
 // NewPoint creates a new point
-func NewPoint(label string, center f32.Point) *Point {
-	var w float32 = 2
+func NewPoint(label string, center f32.Point, cc color.RGBA) *Point {
+	var w float32 = 5
 	rect := calculateRect(center, w)
 	p := &Point{
 		gui.NewRawItem(),
@@ -30,6 +33,7 @@ func NewPoint(label string, center f32.Point) *Point {
 		w,
 		center,
 		style.NewLabel(center, label),
+		cc,
 	}
 	return p
 }
@@ -51,6 +55,7 @@ func (p *Point) Draw(gtx *layout.Context, th *material.Theme) error {
 			return err
 		}
 	}
+	paint.ColorOp{Color: p.color}.Add(gtx.Ops)
 	paint.PaintOp{Rect: r}.Add(gtx.Ops)
 	return nil
 }

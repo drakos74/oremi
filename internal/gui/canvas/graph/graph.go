@@ -2,6 +2,7 @@ package graph
 
 import (
 	"fmt"
+	"image/color"
 	"log"
 	"strings"
 	"time"
@@ -124,13 +125,13 @@ func (g *Chart) Draw(gtx *layout.Context, th *material.Theme) error {
 	return g.Container.Draw(gtx, th)
 }
 
-// Point adds a point to the graph
-func (g *Chart) Point(label string, p f32.Point, control canvas.Control) uint32 {
+// AddPoint adds a point to the graph
+func (g *Chart) AddPoint(label string, p f32.Point, color color.RGBA, control canvas.Control) uint32 {
 	sp := f32.Point{
 		X: g.ScaleAt(0, math.Normal)(p.X),
 		Y: g.ScaleAt(1, math.Inverse)(p.Y),
 	}
-	point := NewPoint(label, sp)
+	point := NewPoint(label, sp, color)
 	g.Add(point, control)
 	return point.ID()
 }
@@ -202,7 +203,7 @@ func (g *Chart) AddCollection(title string, col model.Collection, active bool) c
 		}
 	}
 
-	controller := style.NewCheckBox(title, active)
+	controller := style.NewCheckBox(title, active, col.Style().RGBA)
 	sId := uuid.New().ID()
 	g.add(sId, title, col, controller)
 	g.collections[sId] = collection{
@@ -284,12 +285,12 @@ func (g *Chart) add(sId uint32, title string, collection model.Collection, contr
 	for {
 		point, ok, hasNext := collection.Next()
 		if ok {
-			id := g.Point(
+			id := g.AddPoint(
 				label(point.Label),
 				f32.Point{
 					X: g.scale.ScaleAt(0, math.Normal)(point.X),
 					Y: g.scale.ScaleAt(1, math.Inverse)(point.Y),
-				}, controller)
+				}, collection.Style().RGBA, controller)
 			points[i] = id
 		}
 		if !hasNext {

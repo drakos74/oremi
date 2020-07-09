@@ -212,7 +212,7 @@ func Float32(f float64) float32 {
 	x := float32(f)
 	l := math.Abs(float64(x) - f)
 	if l > PrecisionThreshold {
-		panic(fmt.Sprintf("precision loss for f64:%f vs f32:%f is %v", f, x, l))
+		println(fmt.Sprintf("precision loss for f64:%f vs f32:%f is %v", f, x, l))
 	}
 	return x
 }

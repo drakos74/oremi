@@ -9,6 +9,7 @@ import (
 )
 
 type Label struct {
+	Properties
 	position f32.Point
 	reset    f32.Point
 	text     string

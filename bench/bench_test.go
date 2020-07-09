@@ -21,7 +21,7 @@ func TestParseBenchmark(t *testing.T) {
 }
 
 func TestParseBenchmarkWithAllocs(t *testing.T) {
-	b, err := tryParseBenchmark("BenchmarkSB/*file.SB|get|num:1000|size-key:4|size-value:100|-16                      608           1945741 ns/op          208000 B/op       3000 allocs/op")
+	b, err := tryParseBenchmark("BenchmarkSB/*file.SB|Get|num:1000|size-key:4|size-value:100|-16                      608           1945741 ns/op          208000 B/op       3000 allocs/op")
 
 	assert.NoError(t, err)
 
@@ -29,7 +29,7 @@ func TestParseBenchmarkWithAllocs(t *testing.T) {
 	assert.Equal(t, float64(208000), b.Throughput())
 	assert.Equal(t, float64(3000), b.Heap())
 
-	assert.Equal(t, []string{"BenchmarkSB/*file.SB", "get", "-16"}, b.labels)
+	assert.Equal(t, []string{"BenchmarkSB/*file.SB", "Get", "-16"}, b.labels)
 	assert.Equal(t, map[string]float64{Throughput: float64(208000), Heap: float64(3000), Operations: float64(608), Latency: float64(1945741), "num": 1000, "size-key": 4, "size-value": 100}, b.numLabels)
 
 	println(fmt.Sprintf("%v", b))

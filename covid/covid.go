@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/drakos74/oremi"
+
 	"github.com/drakos74/oremi/internal/data/model"
 
 	"github.com/gocarina/gocsv"
@@ -24,7 +26,7 @@ func (i Infection) ToVector() (model.Vector, error) {
 
 type Infections []Infection
 
-func (i Infections) ToCollection() (map[string]map[string]model.Collection, error) {
+func (i Infections) ToCollection() (map[string]map[string]oremi.Collection, error) {
 	series := make(map[string]*model.Series)
 	for _, infection := range i {
 		s, ok := series[infection.Country]
@@ -40,11 +42,11 @@ func (i Infections) ToCollection() (map[string]map[string]model.Collection, erro
 	}
 
 	// transform to collections
-	collections := make(map[string]model.Collection)
+	collections := make(map[string]oremi.Collection)
 	for key, collection := range series {
-		collections[key] = collection
+		collections[key] = oremi.New(collection)
 	}
-	return map[string]map[string]model.Collection{"covid-19": collections}, nil
+	return map[string]map[string]oremi.Collection{"covid-19": collections}, nil
 }
 
 type Date struct {

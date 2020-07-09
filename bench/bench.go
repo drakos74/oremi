@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/drakos74/oremi"
+
 	"github.com/drakos74/oremi/internal/data/model"
 )
 
@@ -15,6 +17,9 @@ const (
 	Latency    = "ns/op"
 	Throughput = "B/op"
 	Heap       = "allocs/op"
+	Key        = "size-key"
+	Value      = "size-value"
+	Num        = "num-objects"
 )
 
 // Benchmarks is a collection of Benchmark results
@@ -23,7 +28,7 @@ type Benchmarks []Benchmark
 // Extract extracts Latency and operation information from the given benchmarks
 // x value to be used for the x-axis
 // y value to be used for the y-axis
-func (b Benchmarks) Extract(x, y string) model.Collection {
+func (b Benchmarks) Extract(x, y string) *oremi.Collection {
 	series := model.NewSeries(x, y)
 	for _, benchmark := range b {
 		x, hasX := benchmark.read(x)
@@ -32,7 +37,7 @@ func (b Benchmarks) Extract(x, y string) model.Collection {
 			series.Add(model.NewVector(benchmark.labels, x, y))
 		}
 	}
-	return series
+	return oremi.New(series)
 }
 
 // New creates a collection of Benchmark items from a given becnhmark output file
@@ -74,6 +79,8 @@ type Benchmark struct {
 func (b Benchmark) read(numLabel string) (float64, bool) {
 	if a, ok := b.numLabels[numLabel]; ok {
 		return a, true
+	} else {
+		panic(fmt.Sprintf("num-label not found: %v", numLabel))
 	}
 	return 0, false
 }
@@ -92,6 +99,10 @@ func (b Benchmark) Throughput() (float64, bool) {
 
 func (b Benchmark) Heap() (float64, bool) {
 	return b.read(Heap)
+}
+
+func (b Benchmark) Labels() []string {
+	return b.labels
 }
 
 func tryParseBenchmark(line string) (*Benchmark, error) {

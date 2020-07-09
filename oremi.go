@@ -2,6 +2,7 @@ package oremi
 
 import (
 	"fmt"
+	"image/color"
 	"regexp"
 	"strings"
 	"time"
@@ -19,7 +20,24 @@ import (
 	"gioui.org/f32"
 )
 
-func Draw(title string, axis layout.Axis, width, height float32, collection map[string]map[string]datamodel.Collection) {
+type Collection struct {
+	datamodel.Collection
+	style *style.Properties
+}
+
+func New(collection datamodel.Collection) *Collection {
+	return &Collection{
+		Collection: collection,
+		style:      &style.Properties{RGBA: color.RGBA{0, 0, 0, 255}},
+	}
+}
+
+func (c *Collection) Color(color color.RGBA) Collection {
+	c.style.RGBA = color
+	return *c
+}
+
+func Draw(title string, axis layout.Axis, width, height float32, collection map[string]map[string]Collection) {
 
 	cs := len(collection)
 
@@ -54,8 +72,9 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 			graph := entity.NewChart(l, &g)
 			for subtitle, c := range c {
 				// TODO : unify building of controls with the collection call
-				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c), true)
+				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c.Collection, *c.style), true)
 				controllers = append(controllers, controller)
+
 			}
 			graphView.Add(graph)
 			i++
@@ -124,8 +143,8 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 	scene.Run()
 }
 
-func filterCollections(collections map[string]datamodel.Collection, filter datamodel.Filter) (map[string]datamodel.Collection, []string) {
-	cc := make(map[string]datamodel.Collection)
+func filterCollections(collections map[string]Collection, filter datamodel.Filter) (map[string]Collection, []string) {
+	cc := make(map[string]Collection)
 	var labels []string
 	for key, collection := range collections {
 		if filter(collection) {

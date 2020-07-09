@@ -1,6 +1,8 @@
 package model
 
 import (
+	"github.com/drakos74/oremi/internal/gui/style"
+
 	"github.com/drakos74/oremi/internal/data/model"
 	"github.com/drakos74/oremi/internal/math"
 
@@ -19,14 +21,20 @@ type Collection interface {
 	Size() int
 	Reset()
 	Labels() []string
+	Style() style.Properties
 }
 
 type Series struct {
 	model.Collection
+	style style.Properties
 }
 
-func NewSeries(collection model.Collection) Collection {
-	return Series{collection}
+func (s Series) Style() style.Properties {
+	return s.style
+}
+
+func NewSeries(collection model.Collection, style style.Properties) Collection {
+	return Series{Collection: collection, style: style}
 }
 
 func (s Series) Bounds() *f32.Rectangle {

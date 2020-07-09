@@ -97,6 +97,7 @@ func NewAxisY(label string, start f32.Point, length float32) *Axis {
 
 // Draw draws the axis
 func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
+	paint.ColorOp{Color: style.Black}.Add(gtx.Ops)
 	paint.PaintOp{Rect: a.Rect()}.Add(gtx.Ops)
 	return a.label.Draw(gtx, th)
 }
@@ -162,6 +163,7 @@ func (d *Delimiter) Draw(gtx *layout.Context, th *material.Theme) error {
 			return err
 		}
 	}
+	paint.ColorOp{Color: style.Black}.Add(gtx.Ops)
 	paint.PaintOp{Rect: d.Rect()}.Add(gtx.Ops)
 	return nil
 }

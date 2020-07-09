@@ -1,6 +1,8 @@
 package style
 
 import (
+	"image/color"
+
 	"github.com/drakos74/oremi/internal/gui"
 	"github.com/drakos74/oremi/internal/gui/canvas"
 
@@ -13,6 +15,7 @@ import (
 type CheckboxControl struct {
 	gui.RawItem
 	label    string
+	color    color.RGBA
 	checkbox *widget.CheckBox
 	active   bool
 	trigger  chan canvas.Event
@@ -20,10 +23,11 @@ type CheckboxControl struct {
 	enabled  bool
 }
 
-func NewCheckBox(label string, active bool) *CheckboxControl {
+func NewCheckBox(label string, active bool, color color.RGBA) *CheckboxControl {
 	cb := &CheckboxControl{
 		*gui.NewRawItem(),
 		label,
+		color,
 		new(widget.CheckBox),
 		active,
 		make(chan canvas.Event),
@@ -36,7 +40,9 @@ func NewCheckBox(label string, active bool) *CheckboxControl {
 
 func (c *CheckboxControl) Draw(gtx *layout.Context, th *material.Theme) error {
 	if c.enabled {
-		th.CheckBox(c.label).Layout(gtx, c.checkbox)
+		theme := material.NewTheme()
+		theme.Color.Text = c.color
+		theme.CheckBox(c.label).Layout(gtx, c.checkbox)
 	}
 	active := c.active
 	c.active = c.checkbox.Checked(gtx)
@@ -56,6 +62,10 @@ func (c *CheckboxControl) Enable() {
 
 func (c *CheckboxControl) Label() string {
 	return c.label
+}
+
+func (c *CheckboxControl) Color() color.RGBA {
+	return c.color
 }
 
 func (c *CheckboxControl) Set(active bool) {
@@ -80,7 +90,7 @@ type CheckboxControlGroup struct {
 }
 
 func NewCheckboxControlGroup(active bool, control ...canvas.Control) *CheckboxControlGroup {
-	cb := NewCheckBox("all", active)
+	cb := NewCheckBox("all", active, color.RGBA{})
 	group := &CheckboxControlGroup{
 		CheckboxControl: *cb,
 		cboxes:          control,

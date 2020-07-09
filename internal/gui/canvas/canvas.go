@@ -1,6 +1,8 @@
 package canvas
 
 import (
+	"image/color"
+
 	"github.com/drakos74/oremi/internal/gui"
 
 	"gioui.org/f32"
@@ -28,6 +30,7 @@ type EventReceiver <-chan Event
 // Control is an interface for a controller on the elements behavior
 type Control interface {
 	Label() string
+	Color() color.RGBA
 	Disable()
 	Enable()
 	IsActive() bool
@@ -42,6 +45,10 @@ type ActiveController struct {
 
 func (c *ActiveController) Label() string {
 	return ""
+}
+
+func (c *ActiveController) Color() color.RGBA {
+	return color.RGBA{}
 }
 
 func (c *ActiveController) Disable() {
