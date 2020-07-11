@@ -29,9 +29,10 @@ func (c *Color) Get(label string) color.RGBA {
 	return c.colors[label]
 }
 
+var Divergence uint8 = 80
+
 const (
-	threshold = 80
-	max       = 255
+	max uint8 = 255
 )
 
 func newColor(label string) color.RGBA {
@@ -45,15 +46,15 @@ func hash(s string) []uint8 {
 	x := h.Sum32()
 	b := make([]uint8, 8)
 	binary.PutVarint(b, int64(x))
-	return b
+	return b[:4]
 }
 
 func clamp(value uint8) uint8 {
-	if value < threshold {
+	if value < Divergence {
 		return 0
 	}
 	if value > max {
-		return max - threshold
+		return max - Divergence
 	}
-	return value - threshold
+	return value - Divergence
 }
