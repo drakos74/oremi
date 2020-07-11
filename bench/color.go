@@ -29,9 +29,14 @@ func (c *Color) Get(label string) color.RGBA {
 	return c.colors[label]
 }
 
+const (
+	threshold = 80
+	max       = 255
+)
+
 func newColor(label string) color.RGBA {
 	b := hash(label)
-	return color.RGBA{b[0], b[1], b[2], 255}
+	return color.RGBA{clamp(b[1]), clamp(b[2]), clamp(b[3]), 255}
 }
 
 func hash(s string) []uint8 {
@@ -41,4 +46,14 @@ func hash(s string) []uint8 {
 	b := make([]uint8, 8)
 	binary.PutVarint(b, int64(x))
 	return b
+}
+
+func clamp(value uint8) uint8 {
+	if value < threshold {
+		return 0
+	}
+	if value > max {
+		return max - threshold
+	}
+	return value - threshold
 }
