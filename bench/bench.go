@@ -34,32 +34,42 @@ func (b Benchmarks) Extract(x, y string, filters ...Filter) *oremi.Collection {
 		x, hasX := benchmark.read(x)
 		y, hasY := benchmark.read(y)
 
-		matchIn := false
+		matchIn := true
 		matchOut := true
-
+		label := true
 		for _, filter := range filters {
 			switch filter.Type {
 			case IN:
+				matchIn = false
 				for f, v := range filter.filter {
-					value, err := benchmark.read(f)
-					if err && value == v {
-						println(fmt.Sprintf("including in = %v", benchmark))
-						matchIn = true
+					value, ok := benchmark.read(f)
+					if ok && value == v {
+						// all good here ...
+					} else {
+						matchIn = false
 					}
 				}
 			case OUT:
 				for f, v := range filter.filter {
-					value, err := benchmark.read(f)
-					if err && value == v {
-						println(fmt.Sprintf("filtering out = %v", benchmark))
+					value, ok := benchmark.read(f)
+					if ok && value == v {
 						matchOut = false
+					}
+				}
+			case LABEL:
+				// Note : labels are 'all or nothing'
+				for _, v := range filter.labels {
+					if benchmark.hasLabel(v) {
+						// all good ...
+					} else {
+						label = false
 					}
 				}
 			}
 
 		}
 
-		if hasX && hasY && matchIn && matchOut {
+		if hasX && hasY && matchIn && matchOut && label {
 			series.Add(model.NewVector(benchmark.labels, x, y))
 		}
 	}
@@ -100,6 +110,15 @@ type Benchmark struct {
 	labels []string
 	// numeric labels
 	numLabels map[string]float64
+}
+
+func (b Benchmark) hasLabel(label string) bool {
+	for _, l := range b.labels {
+		if l == label {
+			return true
+		}
+	}
+	return false
 }
 
 func (b Benchmark) read(numLabel string) (float64, bool) {
