@@ -57,10 +57,15 @@ func (r RawCollection) Series() map[string]model.Collection {
 
 func Draw(title string, collections ...*RawCollection) {
 
-	ccs := make(map[string]map[string]model.Collection)
+	ccs := make(map[string]map[string]oremi.Collection)
 
+	colors := oremi.Palette(10)
 	for _, collection := range collections {
-		ccs[collection.Title()] = collection.Series()
+		collections := make(map[string]oremi.Collection)
+		for k, col := range collection.Series() {
+			collections[k] = oremi.New(col).Color(colors.Get(k))
+		}
+		ccs[collection.Title()] = collections
 	}
 
 	oremi.Draw(title, layout.Vertical, width, height, ccs)

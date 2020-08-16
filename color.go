@@ -1,4 +1,4 @@
-package bench
+package oremi
 
 import (
 	"encoding/binary"
