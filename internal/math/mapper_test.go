@@ -51,7 +51,17 @@ func assertYMapper(t *testing.T, mapper Mapper, expected, actual float32) {
 	assert.Equal(t, float32(actual), sy)
 }
 
-func TestFloat32_Panic(t *testing.T) {
+func TestFloat32_PrecisionLossNoPanic(t *testing.T) {
+
+	i := time.Now().Unix()
+
+	f := Float32(float64(i))
+
+	assert.NotEqual(t, i, f)
+
+}
+
+func TestMustFloat32_Panic(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r == nil {
@@ -61,24 +71,24 @@ func TestFloat32_Panic(t *testing.T) {
 
 	i := time.Now().Unix()
 
-	Float32(float64(i))
+	MustFloat32(float64(i))
 
 }
 
-func TestFloat32_LowPrecisionNoPanic(t *testing.T) {
+func TestMustFloat32_LowPrecisionNoPanic(t *testing.T) {
 
 	// if we dont divide by 100 code will cause panic
 	i := 1.000000000000002
 
-	Float32(i)
+	MustFloat32(i)
 
 }
 
-func TestFloat32_NoPanic(t *testing.T) {
+func TestMustFloat32_NoPanic(t *testing.T) {
 
 	// if we dont divide by 100 code will cause panic
 	i := time.Now().Unix() / 100
 
-	Float32(float64(i))
+	MustFloat32(float64(i))
 
 }
