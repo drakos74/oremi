@@ -3,6 +3,8 @@ package graph
 import (
 	"image/color"
 
+	"github.com/drakos74/oremi/internal/config"
+
 	"github.com/drakos74/oremi/internal/gui"
 	"github.com/drakos74/oremi/internal/gui/canvas"
 	"github.com/drakos74/oremi/internal/gui/style"
@@ -25,7 +27,7 @@ type Point struct {
 
 // NewPoint creates a new point
 func NewPoint(label string, center f32.Point, cc color.RGBA) *Point {
-	var w float32 = 5
+	var w float32 = config.PointWidth
 	rect := calculateRect(center, w)
 	p := &Point{
 		gui.NewRawItem(),

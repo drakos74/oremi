@@ -1,70 +1,111 @@
-Evangeloss-MBP:lachesis drakos74$ go test ./... -bench=. -benchmem
-?       github.com/drakos74/lachesis/internal/model     [no test files]
+GOROOT=/usr/local/go #gosetup
+GOPATH=/Users/drakos74/go #gosetup
+/usr/local/go/bin/go test -c -o /private/var/folders/9f/x47mxqs91ng21njz8nrt5d2m0000gq/T/___BenchmarkFilter_in_github_com_drakos74_oremi_bench github.com/drakos74/oremi/bench #gosetup
+/private/var/folders/9f/x47mxqs91ng21njz8nrt5d2m0000gq/T/___BenchmarkFilter_in_github_com_drakos74_oremi_bench -test.v -test.bench ^\QBenchmarkFilter\E$ -test.run ^$
 goos: darwin
 goarch: amd64
-pkg: github.com/drakos74/lachesis/internal/store
-BenchmarkSB/*file.SB|put|num-objects:1000|size-key:4|size-value:100|-16                      252           4874271 ns/op          216012 B/op       4000 allocs/op
-BenchmarkSB/*file.SB|get|num-objects:1000|size-key:4|size-value:100|-16                      608           1945741 ns/op          208000 B/op       3000 allocs/op
-BenchmarkSyncSB/*file.SyncSB|put|num-objects:1000|size-key:4|size-value:100|-16              249           5074755 ns/op          216005 B/op       4000 allocs/op
-BenchmarkSyncSB/*file.SyncSB|get|num-objects:1000|size-key:4|size-value:100|-16              590           2003137 ns/op          208000 B/op       3000 allocs/op
-BenchmarkMemory/*mem.Cache|put|num-objects:1000|size-key:4|size-value:100|-16              20815             57997 ns/op            4000 B/op       1000 allocs/op
-BenchmarkMemory/*mem.Cache|get|num-objects:1000|size-key:4|size-value:100|-16              15324             78452 ns/op           48000 B/op       1000 allocs/op
-BenchmarkSyncMemory/*mem.SyncCache|put|num-objects:1000|size-key:4|size-value:100|-16               6382            180749 ns/op           68001 B/op       4000 allocs/op
-BenchmarkSyncMemory/*mem.SyncCache|get|num-objects:1000|size-key:4|size-value:100|-16              10000            100447 ns/op           48000 B/op       1000 allocs/op
-BenchmarkTrie/*mem.Trie|put|num-objects:1000|size-key:4|size-value:100|-16                          6228            197373 ns/op           48000 B/op       1000 allocs/op
-BenchmarkTrie/*mem.Trie|get|num-objects:1000|size-key:4|size-value:100|-16                          5738            199124 ns/op           48000 B/op       1000 allocs/op
-BenchmarkSyncTrie/*mem.SyncTrie|put|num-objects:1000|size-key:4|size-value:100|-16                  4998            228656 ns/op           48000 B/op       1000 allocs/op
-BenchmarkSyncTrie/*mem.SyncTrie|get|num-objects:1000|size-key:4|size-value:100|-16                  5092            234306 ns/op           48000 B/op       1000 allocs/op
-BenchmarkMemBadger/*badger.Store|put|num-objects:1000|size-key:4|size-value:100|-16                   64          17685529 ns/op         1717681 B/op      56059 allocs/op
-BenchmarkMemBadger/*badger.Store|get|num-objects:1000|size-key:4|size-value:100|-16                  682           1616522 ns/op          800090 B/op      13001 allocs/op
-badger 2020/04/18 17:18:26 DEBUG: Storing value log head: {Fid:0 Len:0 Offset:0}
-badger 2020/04/18 17:18:26 INFO: Got compaction priority: {level:0 score:1.73 dropPrefix:[]}
-badger 2020/04/18 17:18:26 INFO: Running for level: 0
-badger 2020/04/18 17:18:26 DEBUG: LOG Compact. Added 1001 keys. Skipped 118000 keys. Iteration took: 53.331994ms
-badger 2020/04/18 17:18:26 DEBUG: Discard stats: map[]
-badger 2020/04/18 17:18:26 INFO: LOG Compact 0->1, del 1 tables, add 1 tables, took 53.492023ms
-badger 2020/04/18 17:18:26 INFO: Compaction for level: 0 DONE
-badger 2020/04/18 17:18:26 INFO: Force compaction on level 0 done
-/Users/drakos74/Projects/lachesis/internal/store
-badger 2020/04/18 17:18:26 INFO: All 1 tables opened in 1ms
-badger 2020/04/18 17:18:26 INFO: Replaying file id: 0 at offset: 81884033
-badger 2020/04/18 17:18:26 INFO: Replay took: 10.243µs
-badger 2020/04/18 17:18:26 DEBUG: Value log discard stats empty
-BenchmarkFileBadger/*badger.Store|put|num-objects:1000|size-key:4|size-value:100|-16                   9         113713159 ns/op         2302961 B/op      70078 allocs/op
-BenchmarkFileBadger/*badger.Store|get|num-objects:1000|size-key:4|size-value:100|-16                 678           1671312 ns/op          608080 B/op      13002 allocs/op
-badger 2020/04/18 17:18:29 DEBUG: Storing value log head: {Fid:0 Len:34 Offset:83433999}
-badger 2020/04/18 17:18:29 INFO: Got compaction priority: {level:0 score:1.73 dropPrefix:[]}
-badger 2020/04/18 17:18:29 INFO: Running for level: 0
-badger 2020/04/18 17:18:29 DEBUG: LOG Compact. Added 4082 keys. Skipped 9001 keys. Iteration took: 29.453266ms
-badger 2020/04/18 17:18:29 DEBUG: Discard stats: map[0:1089000]
-badger 2020/04/18 17:18:29 INFO: LOG Compact 0->1, del 2 tables, add 1 tables, took 44.379755ms
-badger 2020/04/18 17:18:29 INFO: Compaction for level: 0 DONE
-badger 2020/04/18 17:18:29 INFO: Force compaction on level 0 done
+pkg: github.com/drakos74/oremi/bench
+BenchmarkFilter
+BenchmarkFilter/|include|keys:0|length:0|
+BenchmarkFilter/|include|keys:0|length:0|-16         	144437750	         9.21 ns/op
+BenchmarkFilter/|exclude|keys:0|length:0|
+BenchmarkFilter/|exclude|keys:0|length:0|-16         	136575266	         9.43 ns/op
+BenchmarkFilter/|include|keys:2|length:1|
+BenchmarkFilter/|include|keys:2|length:1|-16         	19459129	        58.8 ns/op
+BenchmarkFilter/|exclude|keys:2|length:1|
+BenchmarkFilter/|exclude|keys:2|length:1|-16         	19926831	        59.3 ns/op
+BenchmarkFilter/|include|keys:4|length:2|
+BenchmarkFilter/|include|keys:4|length:2|-16         	11522409	       108 ns/op
+BenchmarkFilter/|exclude|keys:4|length:2|
+BenchmarkFilter/|exclude|keys:4|length:2|-16         	10490293	       110 ns/op
+BenchmarkFilter/|include|keys:6|length:3|
+BenchmarkFilter/|include|keys:6|length:3|-16         	 7273275	       161 ns/op
+BenchmarkFilter/|exclude|length:3|keys:6|
+BenchmarkFilter/|exclude|length:3|keys:6|-16         	 7474268	       167 ns/op
+BenchmarkFilter/|include|keys:8|length:4|
+BenchmarkFilter/|include|keys:8|length:4|-16         	 4433479	       295 ns/op
+BenchmarkFilter/|exclude|keys:8|length:4|
+BenchmarkFilter/|exclude|keys:8|length:4|-16         	 4858016	       246 ns/op
+BenchmarkFilter/|include|keys:10|length:5|
+BenchmarkFilter/|include|keys:10|length:5|-16        	 4629073	       254 ns/op
+BenchmarkFilter/|exclude|keys:10|length:5|
+BenchmarkFilter/|exclude|keys:10|length:5|-16        	 4702798	       259 ns/op
+BenchmarkFilter/|include|length:6|keys:12|
+BenchmarkFilter/|include|length:6|keys:12|-16        	 3512481	       322 ns/op
+BenchmarkFilter/|exclude|keys:12|length:6|
+BenchmarkFilter/|exclude|keys:12|length:6|-16        	 3933037	       307 ns/op
+BenchmarkFilter/|include|keys:14|length:7|
+BenchmarkFilter/|include|keys:14|length:7|-16        	 3341715	       365 ns/op
+BenchmarkFilter/|exclude|keys:14|length:7|
+BenchmarkFilter/|exclude|keys:14|length:7|-16        	 3273930	       363 ns/op
+BenchmarkFilter/|include|keys:16|length:8|
+BenchmarkFilter/|include|keys:16|length:8|-16        	 2781302	       459 ns/op
+BenchmarkFilter/|exclude|keys:16|length:8|
+BenchmarkFilter/|exclude|keys:16|length:8|-16        	 2825601	       422 ns/op
+BenchmarkFilter/|include|keys:18|length:9|
+BenchmarkFilter/|include|keys:18|length:9|-16        	 2164837	       494 ns/op
+BenchmarkFilter/|exclude|keys:18|length:9|
+BenchmarkFilter/|exclude|keys:18|length:9|-16        	 2549605	       521 ns/op
+BenchmarkFilter/|include|keys:20|length:10|
+BenchmarkFilter/|include|keys:20|length:10|-16       	 2467072	       501 ns/op
+BenchmarkFilter/|exclude|keys:20|length:10|
+BenchmarkFilter/|exclude|keys:20|length:10|-16       	 2406026	       495 ns/op
+BenchmarkFilter/|include|keys:22|length:11|
+BenchmarkFilter/|include|keys:22|length:11|-16       	 1968283	       578 ns/op
+BenchmarkFilter/|exclude|keys:22|length:11|
+BenchmarkFilter/|exclude|keys:22|length:11|-16       	 2167263	       542 ns/op
+BenchmarkFilter/|include|keys:24|length:12|
+BenchmarkFilter/|include|keys:24|length:12|-16       	 1962566	       685 ns/op
+BenchmarkFilter/|exclude|keys:24|length:12|
+BenchmarkFilter/|exclude|keys:24|length:12|-16       	 1974392	       679 ns/op
+BenchmarkFilter/|include|keys:26|length:13|
+BenchmarkFilter/|include|keys:26|length:13|-16       	 1794015	       657 ns/op
+BenchmarkFilter/|exclude|keys:26|length:13|
+BenchmarkFilter/|exclude|keys:26|length:13|-16       	 1914235	       706 ns/op
+BenchmarkFilter/|include|keys:28|length:14|
+BenchmarkFilter/|include|keys:28|length:14|-16       	 1460418	       909 ns/op
+BenchmarkFilter/|exclude|length:14|keys:28|
+BenchmarkFilter/|exclude|length:14|keys:28|-16       	 1278390	       852 ns/op
+BenchmarkFilter/|include|length:15|keys:30|
+BenchmarkFilter/|include|length:15|keys:30|-16       	 1394382	       826 ns/op
+BenchmarkFilter/|exclude|keys:30|length:15|
+BenchmarkFilter/|exclude|keys:30|length:15|-16       	 1521211	       773 ns/op
+BenchmarkFilter/|include|keys:32|length:16|
+BenchmarkFilter/|include|keys:32|length:16|-16       	 1504761	       880 ns/op
+BenchmarkFilter/|exclude|keys:32|length:16|
+BenchmarkFilter/|exclude|keys:32|length:16|-16       	 1444335	       907 ns/op
+BenchmarkFilter/|include|keys:34|length:17|
+BenchmarkFilter/|include|keys:34|length:17|-16       	 1340144	       884 ns/op
+BenchmarkFilter/|exclude|keys:34|length:17|
+BenchmarkFilter/|exclude|keys:34|length:17|-16       	 1385127	       859 ns/op
+BenchmarkFilter/|include|keys:36|length:18|
+BenchmarkFilter/|include|keys:36|length:18|-16       	 1310388	       934 ns/op
+BenchmarkFilter/|exclude|keys:36|length:18|
+BenchmarkFilter/|exclude|keys:36|length:18|-16       	 1324016	       912 ns/op
+BenchmarkFilter/|include|keys:38|length:19|
+BenchmarkFilter/|include|keys:38|length:19|-16       	 1200212	       946 ns/op
+BenchmarkFilter/|exclude|keys:38|length:19|
+BenchmarkFilter/|exclude|keys:38|length:19|-16       	 1211691	       985 ns/op
+BenchmarkFilter/|include|keys:40|length:20|
+BenchmarkFilter/|include|keys:40|length:20|-16       	 1000000	      1063 ns/op
+BenchmarkFilter/|exclude|length:20|keys:40|
+BenchmarkFilter/|exclude|length:20|keys:40|-16       	 1204150	      1011 ns/op
+BenchmarkFilter/|include|keys:42|length:21|
+BenchmarkFilter/|include|keys:42|length:21|-16       	 1000000	      1194 ns/op
+BenchmarkFilter/|exclude|keys:42|length:21|
+BenchmarkFilter/|exclude|keys:42|length:21|-16       	 1095240	      1073 ns/op
+BenchmarkFilter/|include|keys:44|length:22|
+BenchmarkFilter/|include|keys:44|length:22|-16       	  880257	      1258 ns/op
+BenchmarkFilter/|exclude|length:22|keys:44|
+BenchmarkFilter/|exclude|length:22|keys:44|-16       	 1000000	      1216 ns/op
+BenchmarkFilter/|include|length:23|keys:46|
+BenchmarkFilter/|include|length:23|keys:46|-16       	  896853	      1308 ns/op
+BenchmarkFilter/|exclude|keys:46|length:23|
+BenchmarkFilter/|exclude|keys:46|length:23|-16       	  829178	      1221 ns/op
+BenchmarkFilter/|include|keys:48|length:24|
+BenchmarkFilter/|include|keys:48|length:24|-16       	  966825	      1253 ns/op
+BenchmarkFilter/|exclude|keys:48|length:24|
+BenchmarkFilter/|exclude|keys:48|length:24|-16       	 1000000	      1207 ns/op
 PASS
-ok      github.com/drakos74/lachesis/internal/store     23.205s
-/Users/drakos74/Projects/lachesis/internal/store/badger
-badger 2020/04/18 17:18:29 INFO: All 1 tables opened in 5ms
-badger 2020/04/18 17:18:29 INFO: Replaying file id: 0 at offset: 11564745
-badger 2020/04/18 17:18:29 INFO: Replay took: 13.397µs
-badger 2020/04/18 17:18:29 DEBUG: Value log discard stats empty
-badger 2020/04/18 17:18:29 DEBUG: Storing value log head: {Fid:0 Len:34 Offset:11564790}
-badger 2020/04/18 17:18:29 INFO: Got compaction priority: {level:0 score:1.73 dropPrefix:[]}
-badger 2020/04/18 17:18:29 INFO: Running for level: 0
-badger 2020/04/18 17:18:29 DEBUG: LOG Compact. Added 100004 keys. Skipped 1 keys. Iteration took: 52.97104ms
-badger 2020/04/18 17:18:29 DEBUG: Discard stats: map[]
-badger 2020/04/18 17:18:29 INFO: LOG Compact 0->1, del 2 tables, add 1 tables, took 81.516547ms
-badger 2020/04/18 17:18:29 INFO: Compaction for level: 0 DONE
-badger 2020/04/18 17:18:29 INFO: Force compaction on level 0 done
-/Users/drakos74/Projects/lachesis/internal/store/badger
-badger 2020/04/18 17:18:29 INFO: All 1 tables opened in 3ms
-badger 2020/04/18 17:18:29 INFO: Replaying file id: 0 at offset: 11564824
-badger 2020/04/18 17:18:29 INFO: Replay took: 6.134µs
-badger 2020/04/18 17:18:29 DEBUG: Value log discard stats empty
-badger 2020/04/18 17:18:41 DEBUG: Storing value log head: {Fid:0 Len:34 Offset:23240486}
-badger 2020/04/18 17:18:41 INFO: Got compaction priority: {level:0 score:1.73 dropPrefix:[]}
-badger 2020/04/18 17:18:41 INFO: Running for level: 0
-badger 2020/04/18 17:18:41 DEBUG: LOG Compact. Added 200004 keys. Skipped 1 keys. Iteration took: 58.329536ms
-badger 2020/04/18 17:18:41 DEBUG: Discard stats: map[]
-badger 2020/04/18 17:18:41 INFO: LOG Compact 0->1, del 2 tables, add 1 tables, took 98.750488ms
-badger 2020/04/18 17:18:41 INFO: Compaction for level: 0 DONE
-badger 2020/04/18 17:18:41 INFO: Force compaction on level 0 done
+
+Process finished with exit code 0

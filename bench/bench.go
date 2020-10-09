@@ -40,33 +40,12 @@ func (b Benchmarks) Extract(x, y string, filters ...Filter) *oremi.Collection {
 		for _, filter := range filters {
 			switch filter.Type {
 			case IN:
-				matchIn = false
-				for f, v := range filter.filter {
-					value, ok := benchmark.read(f)
-					if ok && value == v {
-						// all good here ...
-					} else {
-						matchIn = false
-					}
-				}
+				filter.Apply(benchmark, &matchIn)
 			case OUT:
-				for f, v := range filter.filter {
-					value, ok := benchmark.read(f)
-					if ok && value == v {
-						matchOut = false
-					}
-				}
+				filter.Apply(benchmark, &matchOut)
 			case LABEL:
-				// Note : labels are 'all or nothing'
-				for _, v := range filter.labels {
-					if benchmark.hasLabel(v) {
-						// all good ...
-					} else {
-						label = false
-					}
-				}
+				filter.Apply(benchmark, &label)
 			}
-
 		}
 
 		if hasX && hasY && matchIn && matchOut && label {

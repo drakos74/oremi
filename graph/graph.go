@@ -1,5 +1,10 @@
 package graph
 
+/**
+ * graph is the external API to create series for plotting.
+ * Collection allows us to add series and points by the index.
+ */
+
 import (
 	"fmt"
 
@@ -15,7 +20,7 @@ const (
 
 type Collection interface {
 	Title() string
-	Add(index string, labels []string, x ...float64)
+	Add(index string, x ...float64)
 	NewSeries(index string, labels ...string)
 }
 
@@ -36,11 +41,11 @@ func (r *RawCollection) NewSeries(index string, labels ...string) {
 	r.series[index] = model.NewSeries(labels...)
 }
 
-func (r *RawCollection) Add(index string, labels []string, x ...float64) {
+func (r *RawCollection) Add(index string, x ...float64) {
 	if _, ok := r.series[index]; !ok {
 		panic(fmt.Sprintf("unknown series with index %v", index))
 	}
-	r.series[index].Add(model.NewVector(labels, x...))
+	r.series[index].Add(model.NewVector(r.labels, x...))
 }
 
 func (r RawCollection) Title() string {

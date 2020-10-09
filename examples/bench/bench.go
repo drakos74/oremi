@@ -24,7 +24,7 @@ func main() {
 	benchmarks, err := bench.New(*file)
 
 	if err != nil {
-		log.Fatalf("could not parse benchamrks from file '%s': %v", *file, err)
+		log.Fatalf("could not parse benchmarks from file '%s': %v", *file, err)
 	}
 
 	oremi.Draw("benchmarks", layout.Horizontal, 1400, 800, gatherBenchmarks(benchmarks))
@@ -34,12 +34,12 @@ func main() {
 func gatherBenchmarks(benchmarks bench.Benchmarks) map[string]map[string]oremi.Collection {
 
 	graphs := make(map[string]bench.Benchmarks)
+
+	// use a standard palette to have consistent colors across different executions
 	colors := oremi.Palette(10)
 
 	for _, b := range benchmarks {
-		label := b.Labels()[0]
-		i := strings.Index(label, "/")
-		l := label[0:i]
+		l := strings.Join(b.Labels(), ".")
 		if _, ok := graphs[l]; !ok {
 			graphs[l] = make([]bench.Benchmark, 0)
 		}
@@ -50,7 +50,8 @@ func gatherBenchmarks(benchmarks bench.Benchmarks) map[string]map[string]oremi.C
 	collections["latency"] = make(map[string]oremi.Collection)
 	//collections["memory"] = make(map[string]oremi.Collection)
 	for label, graph := range graphs {
-		collections["latency"][label] = graph.Extract(bench.Operations, bench.Latency, bench.Include(map[string]float64{bench.Num: 1000})).
+		println(fmt.Sprintf("label = %v", label))
+		collections["latency"][label] = graph.Extract(bench.Operations, bench.Latency).
 			Color(colors.Get(label))
 		//collections["memory"][label] = graph.Extract(bench.Heap, bench.Throughput).
 		//	Color(colors.Get(label))

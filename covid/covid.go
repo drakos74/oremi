@@ -44,7 +44,7 @@ func (i Infections) ToCollection() (map[string]map[string]oremi.Collection, erro
 	// transform to collections
 	collections := make(map[string]oremi.Collection)
 	for key, collection := range series {
-		collections[key] = oremi.New(collection)
+		collections[key] = *oremi.New(collection)
 	}
 	return map[string]map[string]oremi.Collection{"covid-19": collections}, nil
 }
