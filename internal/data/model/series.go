@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"math"
+
+	"github.com/drakos74/oremi/label"
 )
 
 // Series is a collection of vectors
@@ -13,11 +15,11 @@ type Series struct {
 	dim     int
 	min     Vector
 	max     Vector
-	labels  []string
+	labels  []label.Label
 }
 
 // NewSeries creates a new series of the specified dimension
-func NewSeries(labels ...string) *Series {
+func NewSeries(labels ...label.Label) *Series {
 	dim := len(labels)
 	min := make([]float64, dim)
 	for i := range min {
@@ -78,11 +80,12 @@ func (s *Series) Edge() (min, max Vector) {
 	return s.min, s.max
 }
 
-// Reset resets the iterator to the start of the collection
-func (s *Series) Labels() []string {
+// Labels returns the labels of the series.
+func (s *Series) Labels() []label.Label {
 	return s.labels
 }
 
+// String returns the data arrays of the series.
 func (s Series) String() string {
 	return fmt.Sprintf("%v", s.vectors)
 }

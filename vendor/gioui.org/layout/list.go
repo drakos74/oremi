@@ -5,7 +5,6 @@ package layout
 import (
 	"image"
 
-	"gioui.org/f32"
 	"gioui.org/gesture"
 	"gioui.org/io/pointer"
 	"gioui.org/op"
@@ -13,8 +12,8 @@ import (
 )
 
 type scrollChild struct {
-	size  image.Point
-	macro op.MacroOp
+	size image.Point
+	call op.CallOp
 }
 
 // List displays a subsection of a potentially infinitely
@@ -30,9 +29,7 @@ type List struct {
 	// Alignment is the cross axis alignment of list elements.
 	Alignment Alignment
 
-	ctx         *Context
-	macro       op.MacroOp
-	child       op.MacroOp
+	ctx         Context
 	scroll      gesture.Scroll
 	scrollDelta int
 
@@ -52,7 +49,7 @@ type List struct {
 
 // ListElement is a function that computes the dimensions of
 // a list element.
-type ListElement func(index int)
+type ListElement func(gtx Context, index int) Dimensions
 
 type iterationDir uint8
 
@@ -83,7 +80,7 @@ const (
 const inf = 1e6
 
 // init prepares the list for iterating through its children with next.
-func (l *List) init(gtx *Context, len int) {
+func (l *List) init(gtx Context, len int) {
 	if l.more() {
 		panic("unfinished child")
 	}
@@ -96,20 +93,21 @@ func (l *List) init(gtx *Context, len int) {
 		l.Position.Offset = 0
 		l.Position.First = len
 	}
-	l.macro.Record(gtx.Ops)
-	l.next()
 }
 
 // Layout the List.
-func (l *List) Layout(gtx *Context, len int, w ListElement) {
-	for l.init(gtx, len); l.more(); l.next() {
-		cs := axisConstraints(l.Axis, Constraint{Max: inf}, axisCrossConstraint(l.Axis, l.ctx.Constraints))
-		i := l.index()
-		l.end(ctxLayout(gtx, cs, func() {
-			w(i)
-		}))
+func (l *List) Layout(gtx Context, len int, w ListElement) Dimensions {
+	l.init(gtx, len)
+	crossMin, crossMax := axisCrossConstraint(l.Axis, gtx.Constraints)
+	gtx.Constraints = axisConstraints(l.Axis, 0, inf, crossMin, crossMax)
+	macro := op.Record(gtx.Ops)
+	for l.next(); l.more(); l.next() {
+		child := op.Record(gtx.Ops)
+		dims := w(gtx, l.index())
+		call := child.Stop()
+		l.end(dims, call)
 	}
-	gtx.Dimensions = l.layout()
+	return l.layout(macro)
 }
 
 func (l *List) scrollToEnd() bool {
@@ -122,7 +120,7 @@ func (l *List) Dragging() bool {
 }
 
 func (l *List) update() {
-	d := l.scroll.Scroll(l.ctx, l.ctx, l.ctx.Now(), gesture.Axis(l.Axis))
+	d := l.scroll.Scroll(l.ctx.Metric, l.ctx, l.ctx.Now, gesture.Axis(l.Axis))
 	l.scrollDelta = d
 	l.Position.Offset += d
 }
@@ -136,9 +134,6 @@ func (l *List) next() {
 		l.Position.BeforeEnd = true
 		l.Position.Offset += l.scrollDelta
 		l.dir = l.nextDir()
-	}
-	if l.more() {
-		l.child.Record(l.ctx.Ops)
 	}
 }
 
@@ -160,7 +155,7 @@ func (l *List) more() bool {
 }
 
 func (l *List) nextDir() iterationDir {
-	vsize := axisMainConstraint(l.Axis, l.ctx.Constraints).Max
+	_, vsize := axisMainConstraint(l.Axis, l.ctx.Constraints)
 	last := l.Position.First + len(l.children)
 	// Clamp offset.
 	if l.maxSize-l.Position.Offset < vsize && last == l.len {
@@ -181,9 +176,8 @@ func (l *List) nextDir() iterationDir {
 }
 
 // End the current child by specifying its dimensions.
-func (l *List) end(dims Dimensions) {
-	l.child.Stop()
-	child := scrollChild{dims.Size, l.child}
+func (l *List) end(dims Dimensions, call op.CallOp) {
+	child := scrollChild{dims.Size, call}
 	mainSize := axisMain(l.Axis, child.size)
 	l.maxSize += mainSize
 	switch l.dir {
@@ -200,11 +194,11 @@ func (l *List) end(dims Dimensions) {
 }
 
 // Layout the List and return its dimensions.
-func (l *List) layout() Dimensions {
+func (l *List) layout(macro op.MacroOp) Dimensions {
 	if l.more() {
 		panic("unfinished child")
 	}
-	mainc := axisMainConstraint(l.Axis, l.ctx.Constraints)
+	mainMin, mainMax := axisMainConstraint(l.Axis, l.ctx.Constraints)
 	children := l.children
 	// Skip invisible children
 	for len(children) > 0 {
@@ -225,7 +219,7 @@ func (l *List) layout() Dimensions {
 			maxCross = c
 		}
 		size += axisMain(l.Axis, sz)
-		if size >= mainc.Max {
+		if size >= mainMax {
 			children = children[:i+1]
 			break
 		}
@@ -233,7 +227,7 @@ func (l *List) layout() Dimensions {
 	ops := l.ctx.Ops
 	pos := -l.Position.Offset
 	// ScrollToEnd lists are end aligned.
-	if space := mainc.Max - size; l.ScrollToEnd && space > 0 {
+	if space := mainMax - size; l.ScrollToEnd && space > 0 {
 		pos += space
 	}
 	for _, child := range children {
@@ -247,8 +241,8 @@ func (l *List) layout() Dimensions {
 		}
 		childSize := axisMain(l.Axis, sz)
 		max := childSize + pos
-		if max > mainc.Max {
-			max = mainc.Max
+		if max > mainMax {
+			max = mainMax
 		}
 		min := pos
 		if min < 0 {
@@ -258,31 +252,30 @@ func (l *List) layout() Dimensions {
 			Min: axisPoint(l.Axis, min, -inf),
 			Max: axisPoint(l.Axis, max, inf),
 		}
-		var stack op.StackOp
-		stack.Push(ops)
-		clip.Rect{Rect: toRectF(r)}.Op(ops).Add(ops)
-		op.TransformOp{}.Offset(toPointF(axisPoint(l.Axis, pos, cross))).Add(ops)
-		child.macro.Add()
+		stack := op.Push(ops)
+		clip.Rect(r).Add(ops)
+		op.Offset(FPt(axisPoint(l.Axis, pos, cross))).Add(ops)
+		child.call.Add(ops)
 		stack.Pop()
 		pos += childSize
 	}
 	atStart := l.Position.First == 0 && l.Position.Offset <= 0
-	atEnd := l.Position.First+len(children) == l.len && mainc.Max >= pos
+	atEnd := l.Position.First+len(children) == l.len && mainMax >= pos
 	if atStart && l.scrollDelta < 0 || atEnd && l.scrollDelta > 0 {
 		l.scroll.Stop()
 	}
 	l.Position.BeforeEnd = !atEnd
-	dims := axisPoint(l.Axis, mainc.Constrain(pos), maxCross)
-	l.macro.Stop()
+	if pos < mainMin {
+		pos = mainMin
+	}
+	if pos > mainMax {
+		pos = mainMax
+	}
+	dims := axisPoint(l.Axis, pos, maxCross)
+	call := macro.Stop()
+	defer op.Push(l.ctx.Ops).Pop()
 	pointer.Rect(image.Rectangle{Max: dims}).Add(ops)
 	l.scroll.Add(ops)
-	l.macro.Add()
+	call.Add(ops)
 	return Dimensions{Size: dims}
-}
-
-func toRectF(r image.Rectangle) f32.Rectangle {
-	return f32.Rectangle{
-		Min: f32.Point{X: float32(r.Min.X), Y: float32(r.Min.Y)},
-		Max: f32.Point{X: float32(r.Max.X), Y: float32(r.Max.Y)},
-	}
 }

@@ -3,6 +3,8 @@ package style
 import (
 	"image/color"
 
+	"gioui.org/font/gofont"
+
 	"github.com/drakos74/oremi/internal/gui"
 	"github.com/drakos74/oremi/internal/gui/canvas"
 
@@ -16,7 +18,7 @@ type CheckboxControl struct {
 	gui.RawItem
 	label    string
 	color    color.RGBA
-	checkbox *widget.CheckBox
+	checkbox *widget.Bool
 	active   bool
 	trigger  chan canvas.Event
 	ack      chan canvas.Event
@@ -28,24 +30,24 @@ func NewCheckBox(label string, active bool, color color.RGBA) *CheckboxControl {
 		*gui.NewRawItem(),
 		label,
 		color,
-		new(widget.CheckBox),
+		new(widget.Bool),
 		active,
 		make(chan canvas.Event),
 		make(chan canvas.Event),
 		true,
 	}
-	cb.checkbox.SetChecked(active)
+	cb.checkbox.Value = active
 	return cb
 }
 
 func (c *CheckboxControl) Draw(gtx *layout.Context, th *material.Theme) error {
 	if c.enabled {
-		theme := material.NewTheme()
+		theme := material.NewTheme(gofont.Collection())
 		theme.Color.Text = c.color
-		theme.CheckBox(c.label).Layout(gtx, c.checkbox)
+		//theme.(c.label).Layout(gtx, c.checkbox)
 	}
 	active := c.active
-	c.active = c.checkbox.Checked(gtx)
+	c.active = c.checkbox.Value
 	if c.active != active {
 		c.trigger <- canvas.Event{canvas.Trigger, c.active, ""}
 	}
@@ -69,7 +71,7 @@ func (c *CheckboxControl) Color() color.RGBA {
 }
 
 func (c *CheckboxControl) Set(active bool) {
-	c.checkbox.SetChecked(active)
+	c.checkbox.Value = active
 }
 
 func (c *CheckboxControl) IsActive() bool {

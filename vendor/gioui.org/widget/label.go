@@ -84,10 +84,10 @@ func (l *lineIterator) Next() (int, int, []text.Glyph, f32.Point, bool) {
 	return 0, 0, nil, f32.Point{}, false
 }
 
-func (l Label) Layout(gtx *layout.Context, s text.Shaper, font text.Font, size unit.Value, txt string) {
+func (l Label) Layout(gtx layout.Context, s text.Shaper, font text.Font, size unit.Value, txt string) layout.Dimensions {
 	cs := gtx.Constraints
 	textSize := fixed.I(gtx.Px(size))
-	lines := s.LayoutString(font, textSize, cs.Width.Max, txt)
+	lines := s.LayoutString(font, textSize, cs.Max.X, txt)
 	if max := l.MaxLines; max > 0 && len(lines) > max {
 		lines = lines[:max]
 	}
@@ -102,27 +102,19 @@ func (l Label) Layout(gtx *layout.Context, s text.Shaper, font text.Font, size u
 		Width:     dims.Size.X,
 	}
 	for {
-		start, end, layout, off, ok := it.Next()
+		start, end, l, off, ok := it.Next()
 		if !ok {
 			break
 		}
-		lclip := toRectF(clip).Sub(off)
-		var stack op.StackOp
-		stack.Push(gtx.Ops)
-		op.TransformOp{}.Offset(off).Add(gtx.Ops)
+		lclip := layout.FRect(clip).Sub(off)
+		stack := op.Push(gtx.Ops)
+		op.Offset(off).Add(gtx.Ops)
 		str := txt[start:end]
-		s.ShapeString(font, textSize, str, layout).Add(gtx.Ops)
+		s.ShapeString(font, textSize, str, l).Add(gtx.Ops)
 		paint.PaintOp{Rect: lclip}.Add(gtx.Ops)
 		stack.Pop()
 	}
-	gtx.Dimensions = dims
-}
-
-func toRectF(r image.Rectangle) f32.Rectangle {
-	return f32.Rectangle{
-		Min: f32.Point{X: float32(r.Min.X), Y: float32(r.Min.Y)},
-		Max: f32.Point{X: float32(r.Max.X), Y: float32(r.Max.Y)},
-	}
+	return dims
 }
 
 func textPadding(lines []text.Line) (padding image.Rectangle) {

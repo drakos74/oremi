@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/drakos74/oremi/label"
+
 	"github.com/drakos74/oremi"
 
 	"github.com/drakos74/oremi/internal/data/model"
@@ -29,7 +31,7 @@ type Benchmarks []Benchmark
 // x value to be used for the x-axis
 // y value to be used for the y-axis
 func (b Benchmarks) Extract(x, y string, filters ...Filter) *oremi.Collection {
-	series := model.NewSeries(x, y)
+	series := model.NewSeries(label.Num(x), label.Num(y))
 	for _, benchmark := range b {
 		x, hasX := benchmark.read(x)
 		y, hasY := benchmark.read(y)

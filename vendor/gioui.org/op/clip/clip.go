@@ -9,7 +9,7 @@ import (
 
 	"gioui.org/f32"
 	"gioui.org/internal/opconst"
-	"gioui.org/internal/path"
+	"gioui.org/internal/ops"
 	"gioui.org/op"
 )
 
@@ -21,13 +21,15 @@ import (
 // Path generates no garbage and can be used for dynamic paths; path
 // data is stored directly in the Ops list supplied to Begin.
 type Path struct {
-	ops       *op.Ops
-	contour   int
-	pen       f32.Point
-	bounds    f32.Rectangle
-	hasBounds bool
-	macro     op.MacroOp
+	ops     *op.Ops
+	contour int
+	pen     f32.Point
+	macro   op.MacroOp
+	start   f32.Point
 }
+
+// Pos returns the current pen position.
+func (p *Path) Pos() f32.Point { return p.pen }
 
 // Op sets the current clip to the intersection of
 // the existing clip with this clip.
@@ -35,41 +37,43 @@ type Path struct {
 // If you need to reset the clip to its previous values after
 // applying a Op, use op.StackOp.
 type Op struct {
-	macro  op.MacroOp
-	bounds f32.Rectangle
+	call   op.CallOp
+	bounds image.Rectangle
 }
 
 func (p Op) Add(o *op.Ops) {
-	p.macro.Add()
+	p.call.Add(o)
 	data := o.Write(opconst.TypeClipLen)
 	data[0] = byte(opconst.TypeClip)
 	bo := binary.LittleEndian
-	bo.PutUint32(data[1:], math.Float32bits(p.bounds.Min.X))
-	bo.PutUint32(data[5:], math.Float32bits(p.bounds.Min.Y))
-	bo.PutUint32(data[9:], math.Float32bits(p.bounds.Max.X))
-	bo.PutUint32(data[13:], math.Float32bits(p.bounds.Max.Y))
+	bo.PutUint32(data[1:], uint32(p.bounds.Min.X))
+	bo.PutUint32(data[5:], uint32(p.bounds.Min.Y))
+	bo.PutUint32(data[9:], uint32(p.bounds.Max.X))
+	bo.PutUint32(data[13:], uint32(p.bounds.Max.Y))
 }
 
 // Begin the path, storing the path data and final Op into ops.
 func (p *Path) Begin(ops *op.Ops) {
 	p.ops = ops
-	p.macro.Record(ops)
-	// Write the TypeAux opcode and a byte for marking whether the
-	// path has had its MaxY filled out. If not, the gpu will fill it
-	// before using it.
-	data := ops.Write(2)
+	p.macro = op.Record(ops)
+	// Write the TypeAux opcode
+	data := ops.Write(opconst.TypeAuxLen)
 	data[0] = byte(opconst.TypeAux)
 }
 
 // MoveTo moves the pen to the given position.
 func (p *Path) Move(to f32.Point) {
-	p.end()
 	to = to.Add(p.pen)
+	p.end()
 	p.pen = to
+	p.start = to
 }
 
 // end completes the current contour.
 func (p *Path) end() {
+	if p.pen != p.start {
+		p.lineTo(p.start)
+	}
 	p.contour++
 }
 
@@ -93,56 +97,141 @@ func (p *Path) Quad(ctrl, to f32.Point) {
 }
 
 func (p *Path) quadTo(ctrl, to f32.Point) {
-	// Zero width curves don't contribute to stenciling.
-	if p.pen.X == to.X && p.pen.X == ctrl.X {
-		p.pen = to
-		return
+	data := p.ops.Write(ops.QuadSize + 4)
+	bo := binary.LittleEndian
+	bo.PutUint32(data[0:], uint32(p.contour))
+	ops.EncodeQuad(data[4:], ops.Quad{
+		From: p.pen,
+		Ctrl: ctrl,
+		To:   to,
+	})
+	p.pen = to
+}
+
+// Arc adds an elliptical arc to the path. The implied ellipse is defined
+// by its focus points f1 and f2.
+// The arc starts in the current point and ends angle radians along the ellipse boundary.
+// The sign of angle determines the direction; positive being counter-clockwise,
+// negative clockwise.
+func (p *Path) Arc(f1, f2 f32.Point, angle float32) {
+	f1 = f1.Add(p.pen)
+	f2 = f2.Add(p.pen)
+	c, rx, ry, beg, alpha := arcFrom(f1, f2, p.pen)
+	p.arc(alpha, c, rx, ry, beg, float64(angle))
+}
+
+func dist(p1, p2 f32.Point) float64 {
+	var (
+		x1 = float64(p1.X)
+		y1 = float64(p1.Y)
+		x2 = float64(p2.X)
+		y2 = float64(p2.Y)
+		dx = x2 - x1
+		dy = y2 - y1
+	)
+	return math.Hypot(dx, dy)
+}
+
+func arcFrom(f1, f2, p f32.Point) (c f32.Point, rx, ry, start, alpha float64) {
+	c = f32.Point{
+		X: 0.5 * (f1.X + f2.X),
+		Y: 0.5 * (f1.Y + f2.Y),
 	}
 
-	bounds := f32.Rectangle{
-		Min: p.pen,
-		Max: to,
-	}.Canon()
+	// semi-major axis: 2a = |PF1| + |PF2|
+	a := 0.5 * (dist(f1, p) + dist(f2, p))
 
-	// If the curve contain areas where a vertical line
-	// intersects it twice, split the curve in two x monotone
-	// lower and upper curves. The stencil fragment program
-	// expects only one intersection per curve.
+	// semi-minor axis: c^2 = a^2+b^2 (c: focal distance)
+	f := dist(f1, c)
+	b := math.Sqrt(a*a - f*f)
 
-	// Find the t where the derivative in x is 0.
-	v0 := ctrl.Sub(p.pen)
-	v1 := to.Sub(ctrl)
-	d := v0.X - v1.X
-	// t = v0 / d. Split if t is in ]0;1[.
-	if v0.X > 0 && d > v0.X || v0.X < 0 && d < v0.X {
-		t := v0.X / d
-		ctrl0 := p.pen.Mul(1 - t).Add(ctrl.Mul(t))
-		ctrl1 := ctrl.Mul(1 - t).Add(to.Mul(t))
-		mid := ctrl0.Mul(1 - t).Add(ctrl1.Mul(t))
-		p.simpleQuadTo(ctrl0, mid)
-		p.simpleQuadTo(ctrl1, to)
-		if mid.X > bounds.Max.X {
-			bounds.Max.X = mid.X
-		}
-		if mid.X < bounds.Min.X {
-			bounds.Min.X = mid.X
-		}
-	} else {
-		p.simpleQuadTo(ctrl, to)
+	switch {
+	case a > b:
+		rx = a
+		ry = b
+	default:
+		rx = b
+		ry = a
 	}
-	// Find the y extremum, if any.
-	d = v0.Y - v1.Y
-	if v0.Y > 0 && d > v0.Y || v0.Y < 0 && d < v0.Y {
-		t := v0.Y / d
-		y := (1-t)*(1-t)*p.pen.Y + 2*(1-t)*t*ctrl.Y + t*t*to.Y
-		if y > bounds.Max.Y {
-			bounds.Max.Y = y
-		}
-		if y < bounds.Min.Y {
-			bounds.Min.Y = y
+
+	var x float64
+	switch {
+	case f1 == c || f2 == c:
+		// degenerate case of a circle.
+		alpha = 0
+	default:
+		switch {
+		case f1.X > c.X:
+			x = float64(f1.X - c.X)
+			alpha = math.Acos(x / f)
+		case f1.X < c.X:
+			x = float64(f2.X - c.X)
+			alpha = math.Acos(x / f)
+		case f1.X == c.X:
+			// special case of a "vertical" ellipse.
+			alpha = math.Pi / 2
+			if f1.Y < c.Y {
+				alpha = -alpha
+			}
 		}
 	}
-	p.expand(bounds)
+
+	start = math.Acos(float64(p.X-c.X) / dist(c, p))
+	if c.Y > p.Y {
+		start = -start
+	}
+	start -= alpha
+
+	return c, rx, ry, start, alpha
+}
+
+// arc records an elliptical arc centered at c, with radii rx and ry,
+// starting at angle beg and stopping at end, in radians.
+//
+// The math is extracted from the following paper:
+//  "Drawing an elliptical arc using polylines, quadratic or
+//   cubic Bezier curves", L. Maisonobe
+// An electronic version may be found at:
+//  http://spaceroots.org/documents/ellipse/elliptical-arc.pdf
+func (p *Path) arc(alpha float64, c f32.Point, rx, ry, beg, delta float64) {
+	const n = 16
+	var (
+		θ   = delta / n
+		ref f32.Affine2D // transform from absolute frame to ellipse-based one
+		rot f32.Affine2D // rotation matrix for each segment
+		inv f32.Affine2D // transform from ellipse-based frame to absolute one
+	)
+	ref = ref.Offset(f32.Point{}.Sub(c))
+	ref = ref.Rotate(f32.Point{}, float32(-alpha))
+	ref = ref.Scale(f32.Point{}, f32.Point{
+		X: float32(1 / rx),
+		Y: float32(1 / ry),
+	})
+	inv = ref.Invert()
+	rot = rot.Rotate(f32.Point{}, float32(0.5*θ))
+
+	// Instead of invoking math.Sincos for every segment, compute a rotation
+	// matrix once and apply for each segment.
+	// Before applying the rotation matrix rot, transform the coordinates
+	// to a frame centered to the ellipse (and warped into a unit circle), then rotate.
+	// Finally, transform back into the original frame.
+	step := func(p f32.Point) f32.Point {
+		q := ref.Transform(p)
+		q = rot.Transform(q)
+		q = inv.Transform(q)
+		return q
+	}
+
+	for i := 0; i < n; i++ {
+		p0 := p.pen
+		p1 := step(p0)
+		p2 := step(p1)
+		ctl := f32.Pt(
+			2*p1.X-0.5*(p0.X+p2.X),
+			2*p1.Y-0.5*(p0.Y+p2.Y),
+		)
+		p.quadTo(ctl, p2)
+	}
 }
 
 // Cube records a cubic Bézier from the pen through
@@ -223,124 +312,24 @@ func (p *Path) approxCubeTo(splits int, maxDist float32, ctrl0, ctrl1, to f32.Po
 	return splits
 }
 
-func (p *Path) expand(b f32.Rectangle) {
-	if !p.hasBounds {
-		p.hasBounds = true
-		inf := float32(math.Inf(+1))
-		p.bounds = f32.Rectangle{
-			Min: f32.Point{X: inf, Y: inf},
-			Max: f32.Point{X: -inf, Y: -inf},
-		}
-	}
-	p.bounds = p.bounds.Union(b)
-}
-
-func (p *Path) vertex(cornerx, cornery int16, ctrl, to f32.Point) {
-	var corner float32
-	// Encode corner.
-	if cornerx == 1 {
-		corner += .5
-	}
-	if cornery == 1 {
-		corner += .25
-	}
-	v := path.Vertex{
-		Corner: corner,
-		FromX:  p.pen.X,
-		FromY:  p.pen.Y,
-		CtrlX:  ctrl.X,
-		CtrlY:  ctrl.Y,
-		ToX:    to.X,
-		ToY:    to.Y,
-	}
-	data := p.ops.Write(path.VertStride)
-	bo := binary.LittleEndian
-	bo.PutUint32(data[0:], math.Float32bits(corner))
-	// Put the contour index in MaxY.
-	bo.PutUint32(data[4:], uint32(p.contour))
-	bo.PutUint32(data[8:], math.Float32bits(v.FromX))
-	bo.PutUint32(data[12:], math.Float32bits(v.FromY))
-	bo.PutUint32(data[16:], math.Float32bits(v.CtrlX))
-	bo.PutUint32(data[20:], math.Float32bits(v.CtrlY))
-	bo.PutUint32(data[24:], math.Float32bits(v.ToX))
-	bo.PutUint32(data[28:], math.Float32bits(v.ToY))
-}
-
-func (p *Path) simpleQuadTo(ctrl, to f32.Point) {
-	// NW.
-	p.vertex(-1, 1, ctrl, to)
-	// NE.
-	p.vertex(1, 1, ctrl, to)
-	// SW.
-	p.vertex(-1, -1, ctrl, to)
-	// SE.
-	p.vertex(1, -1, ctrl, to)
-	p.pen = to
-}
-
 // End the path and return a clip operation that represents it.
 func (p *Path) End() Op {
 	p.end()
-	p.macro.Stop()
+	c := p.macro.Stop()
 	return Op{
-		macro:  p.macro,
-		bounds: p.bounds,
+		call: c,
 	}
 }
 
-// Rect represents the clip area of a rectangle with rounded
-// corners.The origin is in the upper left
-// corner.
-// Specify a square with corner radii equal to half the square size to
-// construct a circular clip area.
-type Rect struct {
-	Rect f32.Rectangle
-	// The corner radii.
-	SE, SW, NW, NE float32
+// Rect represents the clip area of a pixel-aligned rectangle.
+type Rect image.Rectangle
+
+// Op returns the op for the rectangle.
+func (r Rect) Op(ops *op.Ops) Op {
+	return Op{bounds: image.Rectangle(r)}
 }
 
-// Op returns the Op for the rectangle.
-func (rr Rect) Op(ops *op.Ops) Op {
-	r := rr.Rect
-	// Optimize for the common pixel aligned rectangle with no
-	// corner rounding.
-	if rr.SE == 0 && rr.SW == 0 && rr.NW == 0 && rr.NE == 0 {
-		ri := image.Rectangle{
-			Min: image.Point{X: int(r.Min.X), Y: int(r.Min.Y)},
-			Max: image.Point{X: int(r.Max.X), Y: int(r.Max.Y)},
-		}
-		// Optimize pixel-aligned rectangles to just its bounds.
-		if r == toRectF(ri) {
-			return Op{bounds: r}
-		}
-	}
-	return roundRect(ops, r, rr.SE, rr.SW, rr.NW, rr.NE)
-}
-
-// roundRect returns the clip area of a rectangle with rounded
-// corners defined by their radii.
-func roundRect(ops *op.Ops, r f32.Rectangle, se, sw, nw, ne float32) Op {
-	size := r.Size()
-	// https://pomax.github.io/bezierinfo/#circles_cubic.
-	w, h := float32(size.X), float32(size.Y)
-	const c = 0.55228475 // 4*(sqrt(2)-1)/3
-	var p Path
-	p.Begin(ops)
-	p.Move(r.Min)
-	p.Move(f32.Point{X: w, Y: h - se})
-	p.Cube(f32.Point{X: 0, Y: se * c}, f32.Point{X: -se + se*c, Y: se}, f32.Point{X: -se, Y: se}) // SE
-	p.Line(f32.Point{X: sw - w + se, Y: 0})
-	p.Cube(f32.Point{X: -sw * c, Y: 0}, f32.Point{X: -sw, Y: -sw + sw*c}, f32.Point{X: -sw, Y: -sw}) // SW
-	p.Line(f32.Point{X: 0, Y: nw - h + sw})
-	p.Cube(f32.Point{X: 0, Y: -nw * c}, f32.Point{X: nw - nw*c, Y: -nw}, f32.Point{X: nw, Y: -nw}) // NW
-	p.Line(f32.Point{X: w - ne - nw, Y: 0})
-	p.Cube(f32.Point{X: ne * c, Y: 0}, f32.Point{X: ne, Y: ne - ne*c}, f32.Point{X: ne, Y: ne}) // NE
-	return p.End()
-}
-
-func toRectF(r image.Rectangle) f32.Rectangle {
-	return f32.Rectangle{
-		Min: f32.Point{X: float32(r.Min.X), Y: float32(r.Min.Y)},
-		Max: f32.Point{X: float32(r.Max.X), Y: float32(r.Max.Y)},
-	}
+// Add the clip operation.
+func (r Rect) Add(ops *op.Ops) {
+	r.Op(ops).Add(ops)
 }

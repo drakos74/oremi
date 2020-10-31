@@ -10,7 +10,9 @@ import (
 	"github.com/drakos74/oremi/internal/gui/canvas"
 	"github.com/drakos74/oremi/internal/gui/model"
 	"github.com/drakos74/oremi/internal/gui/style"
+
 	"github.com/drakos74/oremi/internal/math"
+	"github.com/drakos74/oremi/label"
 
 	"gioui.org/f32"
 	"gioui.org/layout"
@@ -30,7 +32,7 @@ type Chart struct {
 	points      map[uint32][]uint32
 	xaxis       axis
 	yaxis       axis
-	labels      []string
+	labels      []label.Label
 	trigger     canvas.Events
 }
 
@@ -45,7 +47,7 @@ type collection struct {
 }
 
 // NewChart creates a new graph
-func NewChart(labels []string, rect *f32.Rectangle) *Chart {
+func NewChart(labels []label.Label, rect *f32.Rectangle) *Chart {
 
 	if len(labels) < 2 {
 		log.Fatalf("cannot draw 2-d graph with only one dimension: %v", labels)
@@ -115,7 +117,7 @@ func (g *Chart) RemoveAxis() {
 	}
 }
 
-func (g *Chart) Draw(gtx *layout.Context, th *material.Theme) error {
+func (g *Chart) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
 	select {
 	case <-g.trigger:
 		g.Refresh()
@@ -137,16 +139,16 @@ func (g *Chart) AddPoint(label string, p f32.Point, color color.RGBA, control ca
 }
 
 // AxisX adds an x axis to the graph
-func (g *Chart) AxisX(label string) (*Axis, []*Delimiter) {
+func (g *Chart) AxisX(label label.Label) (*Axis, []*Delimiter) {
 	so := f32.Point{
 		X: g.ScaleAt(0, math.Normal)(0),
 		Y: g.ScaleAt(1, math.Inverse)(0),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
 	rect := g.Rect()
-	xAxis := NewAxisX(label, so, rect.Max.X-rect.Min.X)
+	xAxis := NewAxisX(label.Name(), so, rect.Max.X-rect.Min.X)
 	g.Add(xAxis, nil)
-	delimiters := xAxis.Delimiters(10, math.NewStackedMapper(g.CoordinateMapper, g.scale))
+	delimiters := xAxis.Delimiters(10, math.NewStackedMapper(g.CoordinateMapper, g.scale), label.Format())
 	for _, d := range delimiters {
 		g.Add(d, nil)
 	}
@@ -154,16 +156,16 @@ func (g *Chart) AxisX(label string) (*Axis, []*Delimiter) {
 }
 
 // AxisY adds a y axis to the graph
-func (g *Chart) AxisY(label string) (*Axis, []*Delimiter) {
+func (g *Chart) AxisY(label label.Label) (*Axis, []*Delimiter) {
 	so := f32.Point{
 		X: g.ScaleAt(0, math.Normal)(0),
 		Y: g.ScaleAt(1, math.Inverse)(scale),
 	}
 	// TODO : fix the calcElement parameter to take into account the max
 	rect := g.Rect()
-	yAxis := NewAxisY(label, so, rect.Max.Y-rect.Min.Y)
+	yAxis := NewAxisY(label.Name(), so, rect.Max.Y-rect.Min.Y)
 	g.Add(yAxis, nil)
-	delimiters := yAxis.Delimiters(10, math.NewStackedMapper(g.CoordinateMapper, g.scale))
+	delimiters := yAxis.Delimiters(10, math.NewStackedMapper(g.CoordinateMapper, g.scale), label.Format())
 	for _, d := range delimiters {
 		g.Add(d, nil)
 	}
@@ -173,7 +175,7 @@ func (g *Chart) AxisY(label string) (*Axis, []*Delimiter) {
 // model validation methods
 func (g *Chart) fitsModel(collection model.Collection) error {
 	for i, label := range collection.Labels() {
-		if g.labels[i] != label {
+		if g.labels[i].Name() != label.Name() {
 			return fmt.Errorf("model inconsistency on labels %v vs %v", g.labels, collection.Labels())
 		}
 	}
@@ -286,7 +288,7 @@ func (g *Chart) add(sId uint32, title string, collection model.Collection, contr
 		point, ok, hasNext := collection.Next()
 		if ok {
 			id := g.AddPoint(
-				label(point.Label),
+				createLabel(point.Label),
 				f32.Point{
 					X: g.scale.ScaleAt(0, math.Normal)(point.X),
 					Y: g.scale.ScaleAt(1, math.Inverse)(point.Y),
@@ -301,6 +303,6 @@ func (g *Chart) add(sId uint32, title string, collection model.Collection, contr
 	g.points[sId] = points
 }
 
-func label(labels []string) string {
+func createLabel(labels []string) string {
 	return strings.Join(labels, "-")
 }

@@ -22,20 +22,21 @@ type StackChild struct {
 	widget   Widget
 
 	// Scratch space.
-	macro op.MacroOp
-	dims  Dimensions
+	call op.CallOp
+	dims Dimensions
 }
 
-// Stacked returns a Stack child that laid out with the same maximum
-// constraints as the Stack.
+// Stacked returns a Stack child that is laid out with no minimum
+// constraints and the maximum constraints passed to Stack.Layout.
 func Stacked(w Widget) StackChild {
 	return StackChild{
 		widget: w,
 	}
 }
 
-// Expanded returns a Stack child that is forced to take up at least
-// the space as the largest Stacked.
+// Expanded returns a Stack child with the minimum constraints set
+// to the largest Stacked child. The maximum constraints are set to
+// the same as passed to Stack.Layout.
 func Expanded(w Widget) StackChild {
 	return StackChild{
 		expanded: true,
@@ -46,27 +47,25 @@ func Expanded(w Widget) StackChild {
 // Layout a stack of children. The position of the children are
 // determined by the specified order, but Stacked children are laid out
 // before Expanded children.
-func (s Stack) Layout(gtx *Context, children ...StackChild) {
+func (s Stack) Layout(gtx Context, children ...StackChild) Dimensions {
 	var maxSZ image.Point
 	// First lay out Stacked children.
 	for i, w := range children {
 		if w.expanded {
 			continue
 		}
-		cs := gtx.Constraints
-		cs.Width.Min = 0
-		cs.Height.Min = 0
-		var m op.MacroOp
-		m.Record(gtx.Ops)
-		dims := ctxLayout(gtx, cs, w.widget)
-		m.Stop()
+		macro := op.Record(gtx.Ops)
+		gtx := gtx
+		gtx.Constraints.Min = image.Pt(0, 0)
+		dims := w.widget(gtx)
+		call := macro.Stop()
 		if w := dims.Size.X; w > maxSZ.X {
 			maxSZ.X = w
 		}
 		if h := dims.Size.Y; h > maxSZ.Y {
 			maxSZ.Y = h
 		}
-		children[i].macro = m
+		children[i].call = call
 		children[i].dims = dims
 	}
 	// Then lay out Expanded children.
@@ -74,21 +73,20 @@ func (s Stack) Layout(gtx *Context, children ...StackChild) {
 		if !w.expanded {
 			continue
 		}
-		var m op.MacroOp
-		m.Record(gtx.Ops)
-		cs := Constraints{
-			Width:  Constraint{Min: maxSZ.X, Max: gtx.Constraints.Width.Max},
-			Height: Constraint{Min: maxSZ.Y, Max: gtx.Constraints.Height.Max},
+		macro := op.Record(gtx.Ops)
+		gtx := gtx
+		gtx.Constraints = Constraints{
+			Min: maxSZ, Max: gtx.Constraints.Max,
 		}
-		dims := ctxLayout(gtx, cs, w.widget)
-		m.Stop()
+		dims := w.widget(gtx)
+		call := macro.Stop()
 		if w := dims.Size.X; w > maxSZ.X {
 			maxSZ.X = w
 		}
 		if h := dims.Size.Y; h > maxSZ.Y {
 			maxSZ.Y = h
 		}
-		children[i].macro = m
+		children[i].call = call
 		children[i].dims = dims
 	}
 
@@ -109,10 +107,9 @@ func (s Stack) Layout(gtx *Context, children ...StackChild) {
 		case SW, S, SE:
 			p.Y = maxSZ.Y - sz.Y
 		}
-		var stack op.StackOp
-		stack.Push(gtx.Ops)
-		op.TransformOp{}.Offset(toPointF(p)).Add(gtx.Ops)
-		ch.macro.Add()
+		stack := op.Push(gtx.Ops)
+		op.Offset(FPt(p)).Add(gtx.Ops)
+		ch.call.Add(gtx.Ops)
 		stack.Pop()
 		if baseline == 0 {
 			if b := ch.dims.Baseline; b != 0 {
@@ -120,7 +117,7 @@ func (s Stack) Layout(gtx *Context, children ...StackChild) {
 			}
 		}
 	}
-	gtx.Dimensions = Dimensions{
+	return Dimensions{
 		Size:     maxSZ,
 		Baseline: baseline,
 	}

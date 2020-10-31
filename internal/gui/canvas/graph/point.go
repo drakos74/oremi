@@ -48,16 +48,16 @@ func calculateRect(center f32.Point, w float32) f32.Rectangle {
 }
 
 // Draw draws the point on the canvas
-func (p *Point) Draw(gtx *layout.Context, th *material.Theme) error {
+func (p *Point) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
 	r := p.Rect()
 	if p.IsActive() {
 		r = calculateRect(p.c, 2*p.w)
-		err := p.label.Draw(gtx, th)
+		_, err := p.label.Draw(gtx, th)
 		if err != nil {
-			return err
+			return layout.Dimensions{}, err
 		}
 	}
 	paint.ColorOp{Color: p.color}.Add(gtx.Ops)
 	paint.PaintOp{Rect: r}.Add(gtx.Ops)
-	return nil
+	return layout.Dimensions{}, nil
 }

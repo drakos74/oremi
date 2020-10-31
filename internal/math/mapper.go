@@ -2,8 +2,9 @@ package math
 
 import (
 	"fmt"
-	"log"
 	"math"
+
+	"github.com/rs/zerolog/log"
 )
 
 type ScaleFactor int
@@ -12,6 +13,8 @@ const (
 	Normal ScaleFactor = iota + 1
 	Inverse
 )
+
+type Format func(x float32) string
 
 type Transform func(x float32) float32
 
@@ -77,7 +80,7 @@ func (c CoordinateMapper) ScaleAt(i int, factor ScaleFactor) Transform {
 			return scaleInvAt(i, *c.rect, c.scale, x)
 		}
 	default:
-		log.Fatalf("scaleFactor not recognised: %v", factor)
+		panic(fmt.Sprintf("scaleFactor not recognised: %v", factor))
 		return voidTransform
 	}
 }
@@ -93,7 +96,7 @@ func (c CoordinateMapper) DeScaleAt(i int, factor ScaleFactor) Transform {
 			return deScaleInvAt(i, *c.rect, c.scale, x)
 		}
 	default:
-		log.Fatalf("deScaleFactor not recognised: %v", factor)
+		panic(fmt.Sprintf("deScaleFactor not recognised: %v", factor))
 		return voidTransform
 	}
 }
@@ -171,7 +174,7 @@ func (l MonotonicMapper) DeScaleAt(i int, factor ScaleFactor) Transform {
 			return x/l.scale*(l.Rect.Max[i]-l.Rect.Min[i]) + l.Rect.Min[i]
 		}
 	default:
-		log.Fatalf("scale factor %v not supported for linear mapper", factor)
+		panic(fmt.Sprintf("scale factor %v not supported for linear mapper", factor))
 		return voidTransform
 	}
 }
@@ -185,7 +188,7 @@ func (l MonotonicMapper) ScaleAt(i int, factor ScaleFactor) Transform {
 			return l.scale * (sx - l.Rect.Min[i]) / safe(l.Rect.Max[i]-l.Rect.Min[i])
 		}
 	default:
-		log.Fatalf("scale factor %v not supported for linear mapper", factor)
+		panic(fmt.Sprintf("scale factor %v not supported for linear mapper", factor))
 		return voidTransform
 	}
 }
@@ -212,7 +215,7 @@ func Float32(f float64) float32 {
 	x := float32(f)
 	l := math.Abs(float64(x) - f)
 	if l > PrecisionThreshold {
-		println(fmt.Sprintf("precision loss for f64:%f vs f32:%f is %v", f, x, l))
+		log.Debug().Float64("f64", f).Float32("f32", x).Float64("diff", l).Msg("precision loss")
 	}
 	return x
 }

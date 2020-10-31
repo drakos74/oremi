@@ -3,6 +3,8 @@ package model
 import (
 	"log"
 	"math"
+
+	"github.com/drakos74/oremi/label"
 )
 
 // TODO : unify with math package
@@ -59,7 +61,7 @@ type Collection interface {
 	Iterator
 	Size() int
 	Edge() (min, max Vector)
-	Labels() []string
+	Labels() []label.Label
 }
 
 // TODO : consider removing this abstraction (see usages)

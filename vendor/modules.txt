@@ -1,6 +1,7 @@
-# gioui.org v0.0.0-20200403084947-efce78d414f3
+# gioui.org v0.0.0-20201022165755-672555d3d076
 gioui.org/app
 gioui.org/app/headless
+gioui.org/app/internal/cocoainit
 gioui.org/app/internal/d3d11
 gioui.org/app/internal/egl
 gioui.org/app/internal/glimpl
@@ -10,7 +11,6 @@ gioui.org/app/internal/window
 gioui.org/app/internal/windows
 gioui.org/app/internal/xkb
 gioui.org/f32
-gioui.org/font
 gioui.org/font/gofont
 gioui.org/font/opentype
 gioui.org/gesture
@@ -21,7 +21,6 @@ gioui.org/internal/f32color
 gioui.org/internal/fling
 gioui.org/internal/opconst
 gioui.org/internal/ops
-gioui.org/internal/path
 gioui.org/internal/unsafe
 gioui.org/io/event
 gioui.org/io/key
@@ -45,13 +44,18 @@ github.com/gocarina/gocsv
 github.com/google/uuid
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
+# github.com/rs/zerolog v1.19.0
+github.com/rs/zerolog
+github.com/rs/zerolog/internal/cbor
+github.com/rs/zerolog/internal/json
+github.com/rs/zerolog/log
 # github.com/stretchr/testify v1.5.1
 github.com/stretchr/testify/assert
 # golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
 golang.org/x/exp/shiny/iconvg
 golang.org/x/exp/shiny/iconvg/internal/gradient
 golang.org/x/exp/shiny/materialdesign/icons
-# golang.org/x/image v0.0.0-20190802002840-cff245a6509b
+# golang.org/x/image v0.0.0-20200618115811-c13761719519
 golang.org/x/image/font
 golang.org/x/image/font/gofont/gobold
 golang.org/x/image/font/gofont/gobolditalic

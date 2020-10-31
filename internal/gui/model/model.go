@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/drakos74/oremi/internal/gui/style"
+	"github.com/drakos74/oremi/label"
 
 	"github.com/drakos74/oremi/internal/data/model"
 	"github.com/drakos74/oremi/internal/math"
@@ -20,7 +21,7 @@ type Collection interface {
 	Next() (point *LabeledPoint, ok, next bool)
 	Size() int
 	Reset()
-	Labels() []string
+	Labels() []label.Label
 	Style() style.Properties
 }
 

@@ -96,18 +96,18 @@ func (w *Window) Release() {
 			w.gpu.Release()
 			w.gpu = nil
 		}
-		if w.ctx != nil {
-			w.ctx.Release()
-			w.ctx = nil
-		}
 		return nil
 	})
+	if w.ctx != nil {
+		w.ctx.Release()
+		w.ctx = nil
+	}
 }
 
 // Frame replace the window content and state with the
 // operation list.
-func (w *Window) Frame(frame *op.Ops) {
-	contextDo(w.ctx, func() error {
+func (w *Window) Frame(frame *op.Ops) error {
+	return contextDo(w.ctx, func() error {
 		w.gpu.Collect(w.size, frame)
 		w.gpu.BeginFrame()
 		w.gpu.EndFrame()
@@ -139,8 +139,9 @@ func contextDo(ctx context, f func() error) error {
 			errCh <- err
 			return
 		}
-		defer ctx.ReleaseCurrent()
-		errCh <- f()
+		err := f()
+		ctx.ReleaseCurrent()
+		errCh <- err
 	}()
 	return <-errCh
 }

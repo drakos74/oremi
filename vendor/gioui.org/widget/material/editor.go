@@ -5,6 +5,7 @@ package material
 import (
 	"image/color"
 
+	"gioui.org/internal/f32color"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/paint"
@@ -13,7 +14,7 @@ import (
 	"gioui.org/widget"
 )
 
-type Editor struct {
+type EditorStyle struct {
 	Font     text.Font
 	TextSize unit.Value
 	// Color is the text color.
@@ -22,43 +23,50 @@ type Editor struct {
 	Hint string
 	// HintColor is the color of hint text.
 	HintColor color.RGBA
+	Editor    *widget.Editor
 
 	shaper text.Shaper
 }
 
-func (t *Theme) Editor(hint string) Editor {
-	return Editor{
-		TextSize:  t.TextSize,
-		Color:     t.Color.Text,
-		shaper:    t.Shaper,
+func Editor(th *Theme, editor *widget.Editor, hint string) EditorStyle {
+	return EditorStyle{
+		Editor:    editor,
+		TextSize:  th.TextSize,
+		Color:     th.Color.Text,
+		shaper:    th.Shaper,
 		Hint:      hint,
-		HintColor: t.Color.Hint,
+		HintColor: th.Color.Hint,
 	}
 }
 
-func (e Editor) Layout(gtx *layout.Context, editor *widget.Editor) {
-	var stack op.StackOp
-	stack.Push(gtx.Ops)
-	var macro op.MacroOp
-	macro.Record(gtx.Ops)
+func (e EditorStyle) Layout(gtx layout.Context) layout.Dimensions {
+	defer op.Push(gtx.Ops).Pop()
+	macro := op.Record(gtx.Ops)
 	paint.ColorOp{Color: e.HintColor}.Add(gtx.Ops)
-	tl := widget.Label{Alignment: editor.Alignment}
-	tl.Layout(gtx, e.shaper, e.Font, e.TextSize, e.Hint)
-	macro.Stop()
-	if w := gtx.Dimensions.Size.X; gtx.Constraints.Width.Min < w {
-		gtx.Constraints.Width.Min = w
+	tl := widget.Label{Alignment: e.Editor.Alignment}
+	dims := tl.Layout(gtx, e.shaper, e.Font, e.TextSize, e.Hint)
+	call := macro.Stop()
+	if w := dims.Size.X; gtx.Constraints.Min.X < w {
+		gtx.Constraints.Min.X = w
 	}
-	if h := gtx.Dimensions.Size.Y; gtx.Constraints.Height.Min < h {
-		gtx.Constraints.Height.Min = h
+	if h := dims.Size.Y; gtx.Constraints.Min.Y < h {
+		gtx.Constraints.Min.Y = h
 	}
-	editor.Layout(gtx, e.shaper, e.Font, e.TextSize)
-	if editor.Len() > 0 {
-		paint.ColorOp{Color: e.Color}.Add(gtx.Ops)
-		editor.PaintText(gtx)
+	dims = e.Editor.Layout(gtx, e.shaper, e.Font, e.TextSize)
+	disabled := gtx.Queue == nil
+	if e.Editor.Len() > 0 {
+		textColor := e.Color
+		if disabled {
+			textColor = f32color.MulAlpha(textColor, 150)
+		}
+		paint.ColorOp{Color: textColor}.Add(gtx.Ops)
+		e.Editor.PaintText(gtx)
 	} else {
-		macro.Add()
+		call.Add(gtx.Ops)
 	}
-	paint.ColorOp{Color: e.Color}.Add(gtx.Ops)
-	editor.PaintCaret(gtx)
-	stack.Pop()
+	if !disabled {
+		paint.ColorOp{Color: e.Color}.Add(gtx.Ops)
+		e.Editor.PaintCaret(gtx)
+	}
+	return dims
 }

@@ -1,9 +1,17 @@
 package gui
 
 import (
+	"image"
+	"image/color"
+
 	"gioui.org/io/pointer"
-	"gioui.org/layout"
+
+	"gioui.org/f32"
+	"gioui.org/op/paint"
+
 	"gioui.org/unit"
+
+	"gioui.org/layout"
 	"gioui.org/widget/material"
 )
 
@@ -26,44 +34,70 @@ func NewView(orientation layout.Axis) *View {
 	}
 }
 
-func (v *View) Draw(gtx *layout.Context, th *material.Theme) error {
-	// TODO : do recover
-	//
-	//children := make([]layout.FlexChild, len(v.items))
-	//
-	//for i := 0; i < len(v.items); i++ {
-	//	println(fmt.Sprintf("i = %v", i))
-	//	children[i] = layout.Rigid(func(j int) func() {
-	//		return func() {
-	//			if v.height > 0 {
-	//				gtx.Constraints.Height.Max = gtx.Px(unit.Dp(v.height))
-	//			}
-	//			if v.width > 0 {
-	//				gtx.Constraints.Width.Max = gtx.Px(unit.Dp(v.width))
-	//			}
-	//			layout.UniformInset(unit.Dp(0)).Layout(gtx, v.get(j).draw(gtx, th))
-	//		}
-	//	}(i))
-	//}
-	//
-	//layout.Flex{Alignment: layout.Start}.Layout(gtx, children...)
+func (v *View) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
+	//TODO : do recover
 
-	v.Layout(gtx, len(v.items), func(i int) {
-		if v.height > 0 {
-			gtx.Constraints.Height.Max = gtx.Px(unit.Dp(v.height))
-		}
-		if v.width > 0 {
-			gtx.Constraints.Width.Max = gtx.Px(unit.Dp(v.width))
-		}
-		layout.UniformInset(unit.Dp(0)).Layout(gtx, v.get(i).draw(gtx, th))
+	children := make([]layout.FlexChild, len(v.items))
+
+	for i := 0; i < len(v.items); i++ {
+		children[i] = layout.Rigid(func(j int) layout.Widget {
+			item := v.get(j)
+			d := layout.Dimensions{}
+			//if v, ok := item.(View); ok {
+			//	d = layout.Dimensions{
+			//		Size: image.Point{
+			//			X: gtx.Px(unit.Dp(v.width)),
+			//			Y: gtx.Px(unit.Dp(v.height)),
+			//		},
+			//	}
+			//}
+			return func(gtx layout.Context) layout.Dimensions {
+				layout.UniformInset(unit.Dp(0)).Layout(gtx, item.draw(gtx, th))
+				return d
+			}
+		}(i))
+	}
+
+	layout.Flex{Alignment: layout.Start}.Layout(gtx, children...)
+
+	list := &layout.List{
+		Axis: layout.Vertical,
+	}
+
+	widgets := []layout.Widget{
+		func(gtx layout.Context) layout.Dimensions {
+			paint.ColorOp{Color: color.RGBA{127, 0, 0, 255}}.Add(gtx.Ops)
+			paint.PaintOp{Rect: f32.Rect(0, 0, 100, 100)}.Add(gtx.Ops)
+			paint.ColorOp{Color: color.RGBA{0, 127, 0, 255}}.Add(gtx.Ops)
+			paint.PaintOp{Rect: f32.Rect(50, 50, 150, 150)}.Add(gtx.Ops)
+
+			return layout.Dimensions{
+				//Size: image.Point{
+				//	X: 150,
+				//	Y: 150,
+				//},
+			}
+		},
+	}
+
+	list.Layout(gtx, len(widgets), func(gtx layout.Context, i int) layout.Dimensions {
+		return layout.UniformInset(unit.Dp(0)).Layout(gtx, widgets[i])
 	})
 
-	return nil
+	//v.Layout(gtx, len(v.items), func(gtx layout.Context, i int) layout.Dimensions {
+	//	return layout.UniformInset(unit.Dp(0)).Layout(gtx, v.get(i).draw(gtx, th))
+	//})
+	return layout.Dimensions{
+		Size: image.Point{
+			X: gtx.Px(unit.Dp(v.width)),
+			Y: gtx.Px(unit.Dp(v.height)),
+		},
+	}, nil
 }
 
-func (v *View) Event(gtx *layout.Context, e *pointer.Event) (redraw bool, err error) {
+func (v *View) Event(e *pointer.Event) (redraw bool, err error) {
 	for i := 0; i < len(v.items); i++ {
-		if v.get(i).event(gtx, e) {
+		if v.get(i).event(e) {
 			redraw = true
 		}
 	}

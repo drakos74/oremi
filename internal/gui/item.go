@@ -3,8 +3,11 @@ package gui
 import (
 	"image"
 	"log"
+	"reflect"
 
 	"gioui.org/op"
+
+	"gioui.org/unit"
 
 	"github.com/google/uuid"
 
@@ -17,8 +20,9 @@ import (
 type items map[uint32]item
 
 type item struct {
-	draw  func(gtx *layout.Context, th *material.Theme) func()
-	event func(gtx *layout.Context, e *pointer.Event) bool
+	kind  string
+	draw  func(gtx layout.Context, th *material.Theme) layout.Widget
+	event func(e *pointer.Event) bool
 }
 
 // Add accepts a generic object that must have one of the following properties :
@@ -34,39 +38,44 @@ func (items items) AddItem(v interface{}) (uint32, func()) {
 
 // TODO : measure interface perf overhead usage
 func newItem(v interface{}) item {
-	item := item{}
+	item := item{
+		kind: reflect.TypeOf(v).String(),
+	}
 	// apply draw action if applicable
-	drawAction := func(gtx *layout.Context, th *material.Theme) func() {
-		return func() {
-			// void
+	drawAction := func(gtx layout.Context, th *material.Theme) layout.Widget {
+		return func(gtx layout.Context) layout.Dimensions {
+			return layout.Dimensions{}
 		}
 	}
 	if d, ok := v.(DrawItem); ok {
-		drawAction = func(gtx *layout.Context, th *material.Theme) func() {
-			return func() {
-				err := d.Draw(gtx, th)
+		drawAction = func(gtx layout.Context, th *material.Theme) layout.Widget {
+			return func(gtx layout.Context) layout.Dimensions {
+				d, err := d.Draw(gtx, th)
 				if err != nil {
 					log.Fatalf("error encountered during Draw: %v", err)
 				}
+				return layout.UniformInset(unit.Dp(8)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					return d
+				})
 			}
 		}
 	}
 	item.draw = drawAction
 
 	// apply event listener if applicable
-	eventAction := func(gtx *layout.Context, e *pointer.Event) bool {
+	eventAction := func(e *pointer.Event) bool {
 		return false
 	}
 	if ev, ok := v.(InteractiveItem); ok {
-		item.draw = func(gtx *layout.Context, th *material.Theme) func() {
-			err := ev.Enable(gtx, th)
+		item.draw = func(gtx layout.Context, th *material.Theme) layout.Widget {
+			err := ev.Enable(gtx)
 			if err != nil {
 				log.Fatalf("could not enable interactive element: %v: %v", ev, err)
 			}
 			return drawAction(gtx, th)
 		}
-		eventAction = func(gtx *layout.Context, e *pointer.Event) bool {
-			_, ok, err := ev.Event(gtx, e)
+		eventAction = func(e *pointer.Event) bool {
+			err := ev.Event(e)
 			if err != nil {
 				log.Fatalf("error encountered during Event Propagation: %v", err)
 			}
@@ -74,8 +83,8 @@ func newItem(v interface{}) item {
 		}
 	}
 	if view, ok := v.(*View); ok {
-		eventAction = func(gtx *layout.Context, e *pointer.Event) bool {
-			ok, err := view.Event(gtx, e)
+		eventAction = func(e *pointer.Event) bool {
+			ok, err := view.Event(e)
 			if err != nil {
 				log.Fatalf("error encountered during Event Propagation: %v", err)
 			}
@@ -189,20 +198,23 @@ func Rect(rect *f32.Rectangle) *RawArea {
 
 // DrawItem represents an elements that can be drawn on the screen
 type DrawItem interface {
-	Draw(gtx *layout.Context, th *material.Theme) error
+	Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error)
 }
 
 // InteractiveItem represents an interactive UI element
 type InteractiveItem interface {
-	Event(gtx *layout.Context, e *pointer.Event) (f32.Point, bool, error)
-	Enable(gtx *layout.Context, th *material.Theme) error
+	Event(e *pointer.Event) error
+	Enable(gtx layout.Context) error
+	Pointer() (f32.Point, bool)
 }
 
 // InteractiveElement is the base implementation of a dynamic element
 type InteractiveElement struct {
 	Item
 	Area
-	halo int
+	halo    int
+	active  bool
+	pointer f32.Point
 }
 
 // NewInteractiveElement creates a new dynamic element
@@ -215,28 +227,35 @@ func NewInteractiveElement(rect *f32.Rectangle) *InteractiveElement {
 }
 
 // Enable adds the event handler for an interactive element
-func (item *InteractiveElement) Enable(gtx *layout.Context, th *material.Theme) error {
-	var stack op.StackOp
+func (item *InteractiveElement) Enable(gtx layout.Context) error {
+	stack := op.Push(gtx.Ops)
 	rect := item.Expand(item.halo)
-	stack.Push(gtx.Ops)
 	pointer.Rect(rect).Add(gtx.Ops)
-	pointer.InputOp{Key: item.ID()}.Add(gtx.Ops)
+	pointer.InputOp{Tag: item.ID(), Types: pointer.Enter}.Add(gtx.Ops)
+	pointer.InputOp{Tag: item.ID(), Types: pointer.Leave}.Add(gtx.Ops)
 	stack.Pop()
-	return nil
-}
 
-// Event propagates the scene event to the element
-func (item *InteractiveElement) Event(gtx *layout.Context, e *pointer.Event) (f32.Point, bool, error) {
 	events := gtx.Events(item.ID())
 	if len(events) > 0 {
 		event := events[0]
 		if ev, ok := event.(pointer.Event); ok {
-			return ev.Position, true, nil
+			switch ev.Type {
+			case pointer.Enter:
+				item.active = true
+			case pointer.Leave:
+				item.active = false
+			}
 		}
-		return f32.Point{}, false, nil
 	}
-	if len(events) == 0 {
-		return f32.Point{}, true, nil
-	}
-	return f32.Point{}, false, nil
+	return nil
+}
+
+// Event propagates the scene event to the element
+func (item *InteractiveElement) Event(e *pointer.Event) error {
+	item.pointer = e.Position
+	return nil
+}
+
+func (item *InteractiveElement) Pointer() (f32.Point, bool) {
+	return item.pointer, item.active
 }

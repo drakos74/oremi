@@ -8,6 +8,8 @@ package graph
 import (
 	"fmt"
 
+	"github.com/drakos74/oremi/label"
+
 	"gioui.org/layout"
 	"github.com/drakos74/oremi"
 	"github.com/drakos74/oremi/internal/data/model"
@@ -21,7 +23,7 @@ const (
 type Collection interface {
 	Title() string
 	Add(index string, x ...float64)
-	NewSeries(index string, labels ...string)
+	NewSeries(index string, labels ...label.Label)
 }
 
 type RawCollection struct {
@@ -37,7 +39,7 @@ func New(title string) *RawCollection {
 	}
 }
 
-func (r *RawCollection) NewSeries(index string, labels ...string) {
+func (r *RawCollection) NewSeries(index string, labels ...label.Label) {
 	r.series[index] = model.NewSeries(labels...)
 }
 

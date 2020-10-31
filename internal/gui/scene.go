@@ -6,18 +6,15 @@ import (
 	"gioui.org/io/pointer"
 
 	"gioui.org/font/gofont"
-
-	"gioui.org/io/system"
-	"gioui.org/layout"
 	"gioui.org/widget/material"
 
+	"gioui.org/op"
+
 	"gioui.org/app"
+	"gioui.org/io/system"
+	"gioui.org/layout"
 	"gioui.org/unit"
 )
-
-func init() {
-	gofont.Register()
-}
 
 const Inset = 50
 
@@ -63,17 +60,17 @@ func (s *Scene) Run() {
 
 func loop(scene *Scene, w *app.Window) error {
 
-	th := material.NewTheme()
-	gtx := layout.NewContext(w.Queue())
+	th := material.NewTheme(gofont.Collection())
 
+	var ops op.Ops
 	for e := range w.Events() {
 		switch e := e.(type) {
 		case system.DestroyEvent:
 			return e.Err
 		case system.FrameEvent:
-			gtx.Reset(e.Config, e.Size)
+			gtx := layout.NewContext(&ops, e)
 			// TODO : avoid re-drawing if nothing changed
-			err := scene.Draw(gtx, th)
+			_, err := scene.Draw(gtx, th)
 			if err != nil {
 				// TODO : handle error so that it freezes instead of failing
 				// consider using custom error type
@@ -82,7 +79,7 @@ func loop(scene *Scene, w *app.Window) error {
 			e.Frame(gtx.Ops)
 		case pointer.Event:
 			// TODO : dont make use of gtx from this scope
-			redraw, err := scene.Event(gtx, &e)
+			redraw, err := scene.Event(&e)
 			if err != nil {
 				// TODO : handle error so that it ignores instead of failing
 				// consider using custom error type
@@ -91,6 +88,8 @@ func loop(scene *Scene, w *app.Window) error {
 			if redraw {
 				w.Invalidate()
 			}
+			//default:
+			//	println(fmt.Sprintf("e = %+v", e))
 		}
 	}
 

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/drakos74/oremi/label"
+
 	"github.com/drakos74/oremi"
 
 	"github.com/drakos74/oremi/internal/data/model"
@@ -31,7 +33,13 @@ func (i Infections) ToCollection() (map[string]map[string]oremi.Collection, erro
 	for _, infection := range i {
 		s, ok := series[infection.Country]
 		if !ok {
-			s = model.NewSeries("date", "cases", "deaths", "tests", "cases/mil")
+			s = model.NewSeries(
+				label.Day("date"),
+				label.Num("cases"),
+				label.Num("deaths"),
+				label.Num("tests"),
+				label.Num("cases/mil"),
+			)
 		}
 		v, err := infection.ToVector()
 		if err != nil {
@@ -43,8 +51,14 @@ func (i Infections) ToCollection() (map[string]map[string]oremi.Collection, erro
 
 	// transform to collections
 	collections := make(map[string]oremi.Collection)
+
+	stop := false
 	for key, collection := range series {
+		if stop {
+			continue
+		}
 		collections[key] = *oremi.New(collection)
+		stop = true
 	}
 	return map[string]map[string]oremi.Collection{"covid-19": collections}, nil
 }

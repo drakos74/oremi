@@ -5,14 +5,14 @@
 // To maximize reusability and visual flexibility, user interface controls are
 // split into two parts: the stateful widget and the stateless drawing of it.
 //
-// For example, widget.Button encapsulates the state and event
-// handling of all buttons, while the Theme can draw a single Button
-// in various styles.
+// For example, widget.Clickable encapsulates the state and event
+// handling of all clickable areas, while the Theme is responsible to
+// draw a specific area, for example a button.
 //
 // This snippet defines a button that prints a message when clicked:
 //
-//     var gtx *layout.Context
-//     button := new(widget.Button)
+//     var gtx layout.Context
+//     button := new(widget.Clickable)
 //
 //     for button.Clicked(gtx) {
 //         fmt.Println("Clicked!")
@@ -22,12 +22,12 @@
 //
 //     theme := material.NewTheme(...)
 //
-//     th.Button("Click me!").Layout(gtx, button)
+//     material.Button(theme, "Click me!").Layout(gtx, button)
 //
 // Customization
 //
-// Quite often, a program needs to customize the theme provided defaults. Several
-// options are available, depending on the nature of the change:
+// Quite often, a program needs to customize the theme-provided defaults. Several
+// options are available, depending on the nature of the change.
 //
 // Mandatory parameters: Some parameters are not part of the widget state but
 // have no obvious default. In the program above, the button text is a
@@ -41,17 +41,17 @@
 // Widget-local parameters: For changing the look of a particular widget,
 // adjust the widget specific theme object:
 //
-//     btn := th.Button("Click me!")
+//     btn := material.Button(theme, "Click me!")
 //     btn.Font.Style = text.Italic
-//     btn.Layout(gtx)
+//     btn.Layout(gtx, button)
 //
 // Widget variants: A widget can have several distinct representations even
-// though the underlying state is the same. A widget.Button can be drawn as a
+// though the underlying state is the same. A widget.Clickable can be drawn as a
 // round icon button:
 //
 //     icon := material.NewIcon(...)
 //
-//     th.IconButton(icon).Layout(gtx, button)
+//     material.IconButton(theme, icon).Layout(gtx, button)
 //
 // Specialized widgets: Theme both define a generic Label method
 // that takes a text size, and specialized methods for standard text

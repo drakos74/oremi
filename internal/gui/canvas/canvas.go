@@ -80,7 +80,7 @@ func (c *ActiveController) Set(active bool) {
 type CompoundElement interface {
 	Add(element gui.Item, controller Control)
 	Remove(id uint32)
-	Elements(gtx *layout.Context, apply Action) (bool, error)
+	Elements(gtx layout.Context, apply ...Action) (bool, error)
 }
 
 // RawCompundElement is the base implementation for a compund element
@@ -107,18 +107,21 @@ func (s *RawCompoundElement) Add(element gui.Item, controller Control) {
 }
 
 // Elements applies the specified action to all child elements
-func (s *RawCompoundElement) Elements(gtx *layout.Context, apply Action) (bool, error) {
+func (s *RawCompoundElement) Elements(gtx layout.Context, apply ...Action) (bool, error) {
 	var d bool
 	for id, e := range s.elements {
 		// propagate events only for child elements that are active
 		if s.controls[id].IsActive() {
-			done, err := apply(e)
-			if err != nil {
-				return false, err
+			for _, app := range apply {
+				done, err := app(e)
+				if err != nil {
+					return false, err
+				}
+				if done {
+					d = true
+				}
 			}
-			if done {
-				d = true
-			}
+
 		}
 	}
 	return d, nil
@@ -138,11 +141,11 @@ func (s *RawCompoundElement) Size() int {
 type Action func(element gui.Item) (bool, error)
 
 // DrawFunction is a helper method to invoke the Draw method on an elements
-var DrawAction = func(gtx *layout.Context, th *material.Theme) func(element gui.Item) (bool, error) {
+var DrawAction = func(gtx layout.Context, th *material.Theme) func(element gui.Item) (bool, error) {
 	return func(element gui.Item) (bool, error) {
 		// TODO : avoid reflection by keeping the draw actions in a slice
 		if el, ok := element.(gui.DrawItem); ok {
-			err := el.Draw(gtx, th)
+			_, err := el.Draw(gtx, th)
 			if err != nil {
 				return false, err
 			}

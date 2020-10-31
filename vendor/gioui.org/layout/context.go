@@ -3,8 +3,6 @@
 package layout
 
 import (
-	"image"
-	"math"
 	"time"
 
 	"gioui.org/io/event"
@@ -20,69 +18,59 @@ type Context struct {
 	// Constraints track the constraints for the active widget or
 	// layout.
 	Constraints Constraints
-	// Dimensions track the result of the most recent layout
-	// operation.
-	Dimensions Dimensions
 
-	cfg   system.Config
-	queue event.Queue
+	Metric unit.Metric
+	// By convention, a nil Queue is a signal to widgets to draw themselves
+	// in a disabled state.
+	Queue event.Queue
+	// Now is the animation time.
+	Now time.Time
+
 	*op.Ops
 }
 
-// NewContext returns a Context for an event queue.
-func NewContext(q event.Queue) *Context {
-	return &Context{
-		queue: q,
+// NewContext is a shorthand for
+//
+//   Context{
+//     Ops: ops,
+//     Now: e.Now,
+//     Queue: e.Queue,
+//     Config: e.Config,
+//     Constraints: Exact(e.Size),
+//   }
+//
+// NewContext calls ops.Reset.
+func NewContext(ops *op.Ops, e system.FrameEvent) Context {
+	ops.Reset()
+	return Context{
+		Ops:         ops,
+		Now:         e.Now,
+		Queue:       e.Queue,
+		Metric:      e.Metric,
+		Constraints: Exact(e.Size),
 	}
 }
 
-// layout a widget with a set of constraints and return its
-// dimensions. The widget dimensions are constrained abd the previous
-// constraints are restored after layout.
-func ctxLayout(gtx *Context, cs Constraints, w Widget) Dimensions {
-	saved := gtx.Constraints
-	gtx.Constraints = cs
-	gtx.Dimensions = Dimensions{}
-	w()
-	gtx.Dimensions.Size = cs.Constrain(gtx.Dimensions.Size)
-	gtx.Constraints = saved
-	return gtx.Dimensions
-}
-
-// Reset the context. The constraints' minimum and maximum values are
-// set to the size.
-func (c *Context) Reset(cfg system.Config, size image.Point) {
-	c.Constraints = RigidConstraints(size)
-	c.Dimensions = Dimensions{}
-	c.cfg = cfg
-	if c.Ops == nil {
-		c.Ops = new(op.Ops)
-	}
-	c.Ops.Reset()
-}
-
-// Now returns the configuration time or the zero time.
-func (c *Context) Now() time.Time {
-	if c.cfg == nil {
-		return time.Time{}
-	}
-	return c.cfg.Now()
-}
-
-// Px maps the value to pixels. If no configuration is set,
-// Px returns the rounded value of v.
-func (c *Context) Px(v unit.Value) int {
-	if c.cfg == nil {
-		return int(math.Round(float64(v.V)))
-	}
-	return c.cfg.Px(v)
+// Px maps the value to pixels.
+func (c Context) Px(v unit.Value) int {
+	return c.Metric.Px(v)
 }
 
 // Events returns the events available for the key. If no
 // queue is configured, Events returns nil.
-func (c *Context) Events(k event.Key) []event.Event {
-	if c.queue == nil {
+func (c Context) Events(k event.Tag) []event.Event {
+	if c.Queue == nil {
 		return nil
 	}
-	return c.queue.Events(k)
+	return c.Queue.Events(k)
+}
+
+// Disabled returns a copy of this context with a nil Queue,
+// blocking events to widgets using it.
+//
+// By convention, a nil Queue is a signal to widgets to draw themselves
+// in a disabled state.
+func (c Context) Disabled() Context {
+	c.Queue = nil
+	return c
 }

@@ -48,7 +48,7 @@ func NewAxisX(label string, start f32.Point, length float32) *Axis {
 	return axis
 }
 
-func (axis Axis) Delimiters(delim int, calc math.Mapper) []*Delimiter {
+func (axis Axis) Delimiters(delim int, calc math.Mapper, format math.Format) []*Delimiter {
 	delimiters := make([]*Delimiter, delim+1)
 	for i := 0; i <= delim; i++ {
 		d := float32(i) / float32(delim)
@@ -59,14 +59,16 @@ func (axis Axis) Delimiters(delim int, calc math.Mapper) []*Delimiter {
 					X: axis.start.X + axis.length*d,
 					Y: axis.start.Y,
 				},
-				calc.DeScaleAt(0, math.Normal))
+				calc.DeScaleAt(0, math.Normal),
+				format)
 		case layout.Vertical:
 			delimiters[i] = NewDelimiterY(
 				f32.Point{
 					X: axis.start.X,
 					Y: axis.start.Y + axis.length*d,
 				},
-				calc.DeScaleAt(1, math.Inverse))
+				calc.DeScaleAt(1, math.Inverse),
+				format)
 		}
 	}
 	return delimiters
@@ -96,7 +98,7 @@ func NewAxisY(label string, start f32.Point, length float32) *Axis {
 }
 
 // Draw draws the axis
-func (a *Axis) Draw(gtx *layout.Context, th *material.Theme) error {
+func (a *Axis) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
 	paint.ColorOp{Color: style.Black}.Add(gtx.Ops)
 	paint.PaintOp{Rect: a.Rect()}.Add(gtx.Ops)
 	return a.label.Draw(gtx, th)
@@ -108,10 +110,11 @@ type Delimiter struct {
 	canvas.DynamicElement
 	label     style.Label
 	transform func() float32
+	format    math.Format
 }
 
 // NewDelimiterX creates a new delimiter for an x axis
-func NewDelimiterX(p f32.Point, transform math.Transform) *Delimiter {
+func NewDelimiterX(p f32.Point, transform math.Transform, format math.Format) *Delimiter {
 	rect := &f32.Rectangle{
 		Min: f32.Point{
 			X: p.X,
@@ -129,11 +132,12 @@ func NewDelimiterX(p f32.Point, transform math.Transform) *Delimiter {
 		func() float32 {
 			return transform(p.X)
 		},
+		format,
 	}
 }
 
 // NewDelimiterY creates a new delimiter for an x axis
-func NewDelimiterY(p f32.Point, transform math.Transform) *Delimiter {
+func NewDelimiterY(p f32.Point, transform math.Transform, format math.Format) *Delimiter {
 	rect := &f32.Rectangle{
 		Min: f32.Point{
 			X: p.X - 10,
@@ -151,19 +155,20 @@ func NewDelimiterY(p f32.Point, transform math.Transform) *Delimiter {
 		func() float32 {
 			return transform(p.Y)
 		},
+		format,
 	}
 }
 
 // Draw draws the delimiter
-func (d *Delimiter) Draw(gtx *layout.Context, th *material.Theme) error {
+func (d *Delimiter) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
 	if d.IsActive() {
-		d.label.Text(fmt.Sprintf("%v", d.transform()))
-		err := d.label.Draw(gtx, th)
+		d.label.Text(fmt.Sprintf("%v", d.format(d.transform())))
+		_, err := d.label.Draw(gtx, th)
 		if err != nil {
-			return err
+			return layout.Dimensions{}, err
 		}
 	}
 	paint.ColorOp{Color: style.Black}.Add(gtx.Ops)
 	paint.PaintOp{Rect: d.Rect()}.Add(gtx.Ops)
-	return nil
+	return layout.Dimensions{}, nil
 }

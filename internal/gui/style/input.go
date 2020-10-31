@@ -4,7 +4,6 @@ import (
 	"github.com/drakos74/oremi/internal/gui/canvas"
 
 	"gioui.org/layout"
-	"gioui.org/text"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
 )
@@ -24,24 +23,24 @@ func NewInput() *Input {
 		make(canvas.Events)}
 }
 
-func (i *Input) Draw(gtx *layout.Context, th *material.Theme) error {
-	e := th.Editor("Hint")
-	e.Font.Style = text.Italic
-	e.Layout(gtx, i.editor)
-	for _, e := range i.editor.Events(gtx) {
-		if _, ok := e.(widget.SubmitEvent); ok {
-			i.editor.SetText("")
-		}
-	}
-	if i.text != i.editor.Text() {
-		i.text = i.editor.Text()
-		i.trigger <- canvas.Event{
-			T: canvas.Trigger,
-			A: false,
-			S: i.text,
-		}
-	}
-	return nil
+func (i *Input) Draw(gtx *layout.Context, th *material.Theme) (layout.Dimensions, error) {
+	//e := th.Editor("Hint")
+	//e.Font.Style = text.Italic
+	//e.Layout(gtx, i.editor)
+	//for _, e := range i.editor.Events(gtx) {
+	//	if _, ok := e.(widget.SubmitEvent); ok {
+	//		i.editor.SetText("")
+	//	}
+	//}
+	//if i.text != i.editor.Text() {
+	//	i.text = i.editor.Text()
+	//	i.trigger <- canvas.Event{
+	//		T: canvas.Trigger,
+	//		A: false,
+	//		S: i.text,
+	//	}
+	//}
+	return layout.Dimensions{}, nil
 }
 
 func (i *Input) IsActive() bool {

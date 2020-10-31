@@ -5,6 +5,8 @@ import (
 	"log"
 	"math"
 
+	"github.com/drakos74/oremi/label"
+
 	"github.com/drakos74/oremi/internal/data/model"
 )
 
@@ -68,7 +70,7 @@ type Euclidean struct {
 // Generate generates a new number of points for the graph series
 func (g Euclidean) Num(num int) model.Collection {
 
-	l := model.NewSeries("x", "f(x)")
+	l := model.NewSeries(label.Num("x"), label.Num("f(x)"))
 
 	for i := 0; i < num; i++ {
 
@@ -88,7 +90,7 @@ func (g Euclidean) Num(num int) model.Collection {
 // Generate generates a new number of points for the graph series
 func (g Euclidean) Lim(limit float64) model.Collection {
 
-	l := model.NewSeries("x", "f(x)")
+	l := model.NewSeries(label.Num("x"), label.Num("f(x)"))
 
 	i := 0
 

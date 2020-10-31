@@ -6,13 +6,20 @@ import (
 	"gioui.org/app/internal/glimpl"
 	"gioui.org/gpu/backend"
 	"gioui.org/gpu/gl"
+
+	_ "gioui.org/app/internal/cocoainit"
 )
 
 /*
 #cgo CFLAGS: -DGL_SILENCE_DEPRECATION -Werror -Wno-deprecated-declarations -fmodules -fobjc-arc -x objective-c
 
 #include <CoreFoundation/CoreFoundation.h>
-#include "headless_darwin.h"
+
+__attribute__ ((visibility ("hidden"))) CFTypeRef gio_headless_newContext(void);
+__attribute__ ((visibility ("hidden"))) void gio_headless_releaseContext(CFTypeRef ctxRef);
+__attribute__ ((visibility ("hidden"))) void gio_headless_clearCurrentContext(CFTypeRef ctxRef);
+__attribute__ ((visibility ("hidden"))) void gio_headless_makeCurrentContext(CFTypeRef ctxRef);
+__attribute__ ((visibility ("hidden"))) void gio_headless_prepareContext(CFTypeRef ctxRef);
 */
 import "C"
 

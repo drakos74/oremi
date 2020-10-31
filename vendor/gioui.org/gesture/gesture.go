@@ -11,6 +11,7 @@ package gesture
 
 import (
 	"math"
+	"runtime"
 	"time"
 
 	"gioui.org/f32"
@@ -22,11 +23,24 @@ import (
 	"gioui.org/unit"
 )
 
+// The duration is somewhat arbitrary.
+const doubleClickDuration = 200 * time.Millisecond
+
 // Click detects click gestures in the form
 // of ClickEvents.
 type Click struct {
-	// state tracks the gesture state.
-	state ClickState
+	// clickedAt is the timestamp at which
+	// the last click occurred.
+	clickedAt time.Duration
+	// clicks is incremented if successive clicks
+	// are performed within a fixed duration.
+	clicks int
+	// pressed tracks whether the pointer is pressed.
+	pressed bool
+	// entered tracks whether the pointer is inside the gesture.
+	entered bool
+	// pid is the pointer.ID.
+	pid pointer.ID
 }
 
 type ClickState uint8
@@ -39,9 +53,20 @@ type ClickEvent struct {
 	Position  f32.Point
 	Source    pointer.Source
 	Modifiers key.Modifiers
+	// NumClicks records successive clicks occurring
+	// within a short duration of each other.
+	NumClicks int
 }
 
 type ClickType uint8
+
+// Drag detects drag gestures in the form of pointer.Drag events.
+type Drag struct {
+	dragging bool
+	pid      pointer.ID
+	start    f32.Point
+	grab     bool
+}
 
 // Scroll detects scroll gestures and reduces them to
 // scroll distances. Scroll recognizes mouse wheel
@@ -68,22 +93,15 @@ const (
 )
 
 const (
-	// StateNormal is the default click state.
-	StateNormal ClickState = iota
-	// StateFocused is reported when a pointer
-	// is hovering over the handler.
-	StateFocused
-	// StatePressed is then a pointer is pressed.
-	StatePressed
-)
-
-const (
 	// TypePress is reported for the first pointer
 	// press.
 	TypePress ClickType = iota
-	// TypeClick is reporoted when a click action
+	// TypeClick is reported when a click action
 	// is complete.
 	TypeClick
+	// TypeCancel is reported when the gesture is
+	// cancelled.
+	TypeCancel
 )
 
 const (
@@ -100,13 +118,11 @@ var touchSlop = unit.Dp(3)
 
 // Add the handler to the operation list to receive click events.
 func (c *Click) Add(ops *op.Ops) {
-	op := pointer.InputOp{Key: c}
+	op := pointer.InputOp{
+		Tag:   c,
+		Types: pointer.Press | pointer.Release | pointer.Enter | pointer.Leave,
+	}
 	op.Add(ops)
-}
-
-// State reports the click state.
-func (c *Click) State() ClickState {
-	return c.state
 }
 
 // Events returns the next click event, if any.
@@ -119,27 +135,56 @@ func (c *Click) Events(q event.Queue) []ClickEvent {
 		}
 		switch e.Type {
 		case pointer.Release:
-			wasPressed := c.state == StatePressed
-			c.state = StateNormal
-			if wasPressed {
-				events = append(events, ClickEvent{Type: TypeClick, Position: e.Position, Source: e.Source, Modifiers: e.Modifiers})
+			if !c.pressed || c.pid != e.PointerID {
+				break
+			}
+			c.pressed = false
+			if c.entered {
+				if e.Time-c.clickedAt < doubleClickDuration {
+					c.clicks++
+				} else {
+					c.clicks = 1
+				}
+				c.clickedAt = e.Time
+				events = append(events, ClickEvent{Type: TypeClick, Position: e.Position, Source: e.Source, Modifiers: e.Modifiers, NumClicks: c.clicks})
+			} else {
+				events = append(events, ClickEvent{Type: TypeCancel})
 			}
 		case pointer.Cancel:
-			c.state = StateNormal
+			wasPressed := c.pressed
+			c.pressed = false
+			c.entered = false
+			if wasPressed {
+				events = append(events, ClickEvent{Type: TypeCancel})
+			}
 		case pointer.Press:
-			if c.state == StatePressed || !e.Hit {
+			if c.pressed {
 				break
 			}
 			if e.Source == pointer.Mouse && e.Buttons != pointer.ButtonLeft {
 				break
 			}
-			c.state = StatePressed
+			if !c.entered {
+				c.pid = e.PointerID
+			}
+			if c.pid != e.PointerID {
+				break
+			}
+			c.pressed = true
 			events = append(events, ClickEvent{Type: TypePress, Position: e.Position, Source: e.Source, Modifiers: e.Modifiers})
-		case pointer.Move:
-			if c.state == StatePressed && !e.Hit {
-				c.state = StateNormal
-			} else if c.state < StateFocused {
-				c.state = StateFocused
+		case pointer.Leave:
+			if !c.pressed {
+				c.pid = e.PointerID
+			}
+			if c.pid == e.PointerID {
+				c.entered = false
+			}
+		case pointer.Enter:
+			if !c.pressed {
+				c.pid = e.PointerID
+			}
+			if c.pid == e.PointerID {
+				c.entered = true
 			}
 		}
 	}
@@ -148,7 +193,11 @@ func (c *Click) Events(q event.Queue) []ClickEvent {
 
 // Add the handler to the operation list to receive scroll events.
 func (s *Scroll) Add(ops *op.Ops) {
-	oph := pointer.InputOp{Key: s, Grab: s.grab}
+	oph := pointer.InputOp{
+		Tag:   s,
+		Grab:  s.grab,
+		Types: pointer.Press | pointer.Drag | pointer.Release | pointer.Scroll,
+	}
 	oph.Add(ops)
 	if s.flinger.Active() {
 		op.InvalidateOp{}.Add(ops)
@@ -162,7 +211,7 @@ func (s *Scroll) Stop() {
 
 // Scroll detects the scrolling distance from the available events and
 // ongoing fling gestures.
-func (s *Scroll) Scroll(cfg unit.Converter, q event.Queue, t time.Time, axis Axis) int {
+func (s *Scroll) Scroll(cfg unit.Metric, q event.Queue, t time.Time, axis Axis) int {
 	if s.axis != axis {
 		s.axis = axis
 		return 0
@@ -175,7 +224,12 @@ func (s *Scroll) Scroll(cfg unit.Converter, q event.Queue, t time.Time, axis Axi
 		}
 		switch e.Type {
 		case pointer.Press:
-			if s.dragging || e.Source != pointer.Touch {
+			if s.dragging {
+				break
+			}
+			// Only scroll on touch drags, or on Android where mice
+			// drags also scroll by convention.
+			if e.Source != pointer.Touch && runtime.GOOS != "android" {
 				break
 			}
 			s.Stop()
@@ -197,8 +251,10 @@ func (s *Scroll) Scroll(cfg unit.Converter, q event.Queue, t time.Time, axis Axi
 		case pointer.Cancel:
 			s.dragging = false
 			s.grab = false
-		case pointer.Move:
-			// Scroll
+		case pointer.Scroll:
+			if e.Priority < pointer.Foremost {
+				continue
+			}
 			switch s.axis {
 			case Horizontal:
 				s.scroll += e.Scroll.X
@@ -208,10 +264,10 @@ func (s *Scroll) Scroll(cfg unit.Converter, q event.Queue, t time.Time, axis Axi
 			iscroll := int(s.scroll)
 			s.scroll -= float32(iscroll)
 			total += iscroll
+		case pointer.Drag:
 			if !s.dragging || s.pid != e.PointerID {
 				continue
 			}
-			// Drag
 			val := s.val(e.Position)
 			s.estimator.Sample(e.Time, val)
 			v := int(math.Round(float64(val)))
@@ -251,6 +307,67 @@ func (s *Scroll) State() ScrollState {
 	}
 }
 
+// Add the handler to the operation list to receive drag events.
+func (d *Drag) Add(ops *op.Ops) {
+	op := pointer.InputOp{
+		Tag:   d,
+		Grab:  d.grab,
+		Types: pointer.Press | pointer.Drag | pointer.Release,
+	}
+	op.Add(ops)
+}
+
+// Events returns the next drag events, if any.
+func (d *Drag) Events(cfg unit.Metric, q event.Queue, axis Axis) []pointer.Event {
+	var events []pointer.Event
+	for _, e := range q.Events(d) {
+		e, ok := e.(pointer.Event)
+		if !ok {
+			continue
+		}
+
+		switch e.Type {
+		case pointer.Press:
+			if !(e.Buttons == pointer.ButtonLeft || e.Source == pointer.Touch) {
+				continue
+			}
+			if d.dragging {
+				continue
+			}
+			d.dragging = true
+			d.pid = e.PointerID
+			d.start = e.Position
+		case pointer.Drag:
+			if !d.dragging || e.PointerID != d.pid {
+				continue
+			}
+			switch axis {
+			case Horizontal:
+				e.Position.Y = d.start.Y
+			case Vertical:
+				e.Position.X = d.start.X
+			}
+			if e.Priority < pointer.Grabbed {
+				diff := e.Position.Sub(d.start)
+				slop := cfg.Px(touchSlop)
+				if diff.X*diff.X+diff.Y*diff.Y > float32(slop*slop) {
+					d.grab = true
+				}
+			}
+		case pointer.Release, pointer.Cancel:
+			if !d.dragging || e.PointerID != d.pid {
+				continue
+			}
+			d.dragging = false
+			d.grab = false
+		}
+
+		events = append(events, e)
+	}
+
+	return events
+}
+
 func (a Axis) String() string {
 	switch a {
 	case Horizontal:
@@ -268,21 +385,10 @@ func (ct ClickType) String() string {
 		return "TypePress"
 	case TypeClick:
 		return "TypeClick"
+	case TypeCancel:
+		return "TypeCancel"
 	default:
 		panic("invalid ClickType")
-	}
-}
-
-func (cs ClickState) String() string {
-	switch cs {
-	case StateNormal:
-		return "StateNormal"
-	case StateFocused:
-		return "StateFocused"
-	case StatePressed:
-		return "StatePressed"
-	default:
-		panic("invalid ClickState")
 	}
 }
 

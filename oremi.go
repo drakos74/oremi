@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/drakos74/oremi/label"
+
 	datamodel "github.com/drakos74/oremi/internal/data/model"
 	"github.com/drakos74/oremi/internal/gui/canvas"
 	uimodel "github.com/drakos74/oremi/internal/gui/model"
@@ -138,14 +140,15 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 
 	screenView.Add(graphView, controllerView)
 
+	println(fmt.Sprintf("screenView = %+v", screenView))
 	scene.Add(screenView)
 
 	scene.Run()
 }
 
-func filterCollections(collections map[string]Collection, filter datamodel.Filter) (map[string]Collection, []string) {
+func filterCollections(collections map[string]Collection, filter datamodel.Filter) (map[string]Collection, []label.Label) {
 	cc := make(map[string]Collection)
-	var labels []string
+	var labels []label.Label
 	for key, collection := range collections {
 		if filter(collection) {
 			cc[key] = collection

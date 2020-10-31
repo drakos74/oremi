@@ -1,8 +1,6 @@
 package style
 
 import (
-	"image"
-
 	"gioui.org/f32"
 	"gioui.org/layout"
 	"gioui.org/op/paint"
@@ -17,13 +15,7 @@ func NewRect(rect *f32.Rectangle) *Rect {
 	return &Rect{rect: rect}
 }
 
-func (r Rect) Draw(gtx *layout.Context, th *material.Theme) error {
-	gtx.Dimensions = layout.Dimensions{
-		Size: image.Point{
-			X: 200,
-			Y: 200,
-		},
-	}
+func (r Rect) Draw(gtx *layout.Context, th *material.Theme) (layout.Dimensions, error) {
 	paint.PaintOp{Rect: *r.rect}.Add(gtx.Ops)
-	return nil
+	return layout.Dimensions{}, nil
 }
