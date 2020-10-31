@@ -48,11 +48,11 @@ func (l *Label) Position(position f32.Point) {
 }
 
 func (l Label) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
-	// TODO : try with StackOp
-	stack := op.Push(gtx.Ops)
+	// TODO try with stack op
+	//stack := op.Push(gtx.Ops)
 	op.Offset(l.position).Add(gtx.Ops)
 	material.Label(th, unit.Px(30), l.text).Layout(gtx)
 	op.Offset(l.reset).Add(gtx.Ops)
-	stack.Pop()
+	//stack.Pop()
 	return layout.Dimensions{}, nil
 }
