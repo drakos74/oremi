@@ -27,15 +27,20 @@ type Collection interface {
 
 type Series struct {
 	model.Collection
-	style style.Properties
+	style       style.Properties
+	aggregation int
 }
 
 func (s Series) Style() style.Properties {
 	return s.style
 }
 
-func NewSeries(collection model.Collection, style style.Properties) Collection {
-	return Series{Collection: collection, style: style}
+func NewSeries(collection model.Collection, style style.Properties, aggregation int) Collection {
+	return Series{
+		Collection:  collection,
+		style:       style,
+		aggregation: aggregation,
+	}
 }
 
 func (s Series) Bounds() *f32.Rectangle {
@@ -53,17 +58,37 @@ func (s Series) Bounds() *f32.Rectangle {
 }
 
 func (s Series) Next() (point *LabeledPoint, ok, next bool) {
-	if p, ok, next := s.Collection.Next(); ok {
-		return &LabeledPoint{
-			// TODO : make the coordinate choice connected to the labels and the graph options in general
-			Point: f32.Point{
-				X: math.Float32(p.Coords[0]),
-				Y: math.Float32(p.Coords[1]),
-			},
-			Label: p.Label,
-		}, true, next
+	// aggregate the number of points with an average
+	n := s.aggregation
+	vv := make([]model.Vector, n)
+
+	var p model.Vector
+	for i := 0; i < n; i++ {
+		if p, ok, next = s.Collection.Next(); ok {
+			vv[i] = p
+		}
 	}
-	return nil, false, false
+
+	// TODO : make a math operation for this
+	var x float64
+	var y float64
+	var nn float64
+	for _, v := range vv {
+		if len(v.Coords) > 0 {
+			x += v.Coords[0]
+			y += v.Coords[1]
+			nn++
+		}
+	}
+
+	return &LabeledPoint{
+		// TODO : make the coordinate choice connected to the labels and the graph options in general
+		Point: f32.Point{
+			X: math.Float32(x / nn),
+			Y: math.Float32(y / nn),
+		},
+		Label: p.Label,
+	}, ok, next
 }
 
 func (s Series) Reset() {

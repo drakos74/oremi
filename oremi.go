@@ -39,7 +39,7 @@ func (c *Collection) Color(color color.RGBA) Collection {
 	return *c
 }
 
-func Draw(title string, axis layout.Axis, width, height float32, collection map[string]map[string]Collection) {
+func Draw(title string, axis layout.Axis, width, height float32, collection map[string]map[string]Collection, aggregation int) {
 
 	cs := len(collection)
 
@@ -74,7 +74,7 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 			graph := entity.NewChart(l, &g)
 			for subtitle, c := range c {
 				// TODO : unify building of controls with the collection call
-				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c.Collection, *c.style), true)
+				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c.Collection, *c.style, aggregation), true)
 				controllers = append(controllers, controller)
 			}
 			graphView.Add(graph)

@@ -28,6 +28,6 @@ func main() {
 	}
 
 	// draw the data collection
-	oremi.Draw("covid-19", layout.Vertical, 1600, 800, collections)
+	oremi.Draw("covid-19", layout.Vertical, 1600, 800, collections, 5)
 
 }

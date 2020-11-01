@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("could not parse benchmarks from file '%s': %v", *file, err)
 	}
 
-	oremi.Draw("benchmarks", layout.Horizontal, 1400, 800, gatherBenchmarks(benchmarks))
+	oremi.Draw("benchmarks", layout.Horizontal, 1400, 800, gatherBenchmarks(benchmarks), 1)
 
 }
 

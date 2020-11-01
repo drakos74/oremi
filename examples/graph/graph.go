@@ -18,6 +18,7 @@ func main() {
 				"exponential": *oremi.New(generator.NewExponential(500, 1, 0.01)),
 			},
 		},
+		1,
 	)
 
 }
