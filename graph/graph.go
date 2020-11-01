@@ -62,7 +62,7 @@ func (r RawCollection) Series() map[string]model.Collection {
 	return collections
 }
 
-func Draw(title string, collections ...*RawCollection) {
+func Draw(title string, aggregation int, collections ...*RawCollection) {
 
 	ccs := make(map[string]map[string]oremi.Collection)
 
@@ -75,5 +75,5 @@ func Draw(title string, collections ...*RawCollection) {
 		ccs[collection.Title()] = collections
 	}
 
-	oremi.Draw(title, layout.Vertical, width, height, ccs)
+	oremi.Draw(title, layout.Vertical, width, height, ccs, aggregation)
 }
