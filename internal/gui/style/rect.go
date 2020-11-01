@@ -15,7 +15,7 @@ func NewRect(rect *f32.Rectangle) *Rect {
 	return &Rect{rect: rect}
 }
 
-func (r Rect) Draw(gtx *layout.Context, th *material.Theme) (layout.Dimensions, error) {
+func (r Rect) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
 	paint.PaintOp{Rect: *r.rect}.Add(gtx.Ops)
 	return layout.Dimensions{}, nil
 }

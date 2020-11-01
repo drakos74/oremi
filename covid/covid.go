@@ -58,7 +58,7 @@ func (i Infections) ToCollection() (map[string]map[string]oremi.Collection, erro
 			continue
 		}
 		collections[key] = *oremi.New(collection)
-		stop = true
+		//stop = true
 	}
 	return map[string]map[string]oremi.Collection{"covid-19": collections}, nil
 }

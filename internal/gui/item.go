@@ -21,6 +21,7 @@ type items map[uint32]item
 
 type item struct {
 	kind  string
+	size  f32.Point
 	draw  func(gtx layout.Context, th *material.Theme) layout.Widget
 	event func(e *pointer.Event) bool
 }
@@ -29,6 +30,7 @@ type item struct {
 // - implement
 func (items items) AddItem(v interface{}) (uint32, func()) {
 	item := newItem(v)
+	//item.size = size
 	id := uuid.New().ID()
 	items[id] = item
 	return id, func() {
@@ -50,11 +52,11 @@ func newItem(v interface{}) item {
 	if d, ok := v.(DrawItem); ok {
 		drawAction = func(gtx layout.Context, th *material.Theme) layout.Widget {
 			return func(gtx layout.Context) layout.Dimensions {
-				d, err := d.Draw(gtx, th)
-				if err != nil {
-					log.Fatalf("error encountered during Draw: %v", err)
-				}
-				return layout.UniformInset(unit.Dp(8)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+				return layout.UniformInset(unit.Dp(0)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+					d, err := d.Draw(gtx, th)
+					if err != nil {
+						log.Fatalf("error encountered during Draw: %v", err)
+					}
 					return d
 				})
 			}
@@ -228,6 +230,7 @@ func NewInteractiveElement(rect *f32.Rectangle) *InteractiveElement {
 
 // Enable adds the event handler for an interactive element
 func (item *InteractiveElement) Enable(gtx layout.Context) error {
+	// TODO : fix the event handling to enable active check
 	stack := op.Push(gtx.Ops)
 	rect := item.Expand(item.halo)
 	pointer.Rect(rect).Add(gtx.Ops)

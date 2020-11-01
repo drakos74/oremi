@@ -19,18 +19,20 @@ type Container struct {
 
 // Draw propagates the draw call to all the scene children.
 func (c *Container) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
-	//layout.Dimensions = c.Layout(gtx.Ops)
-	p, active := c.InteractiveElement.Pointer()
+	// TODO : enable event handling with active
+	p, _ := c.InteractiveElement.Pointer()
 	var err error
-	if active {
+	if true {
 		_, err = c.Elements(gtx, EventAction(p), DrawAction(gtx, th))
 	} else {
 		_, err = c.Elements(gtx, DrawAction(gtx, th))
 	}
+	width := c.InteractiveElement.Area.Rect().Max.X - c.InteractiveElement.Area.Rect().Min.X
+	height := c.InteractiveElement.Area.Rect().Max.Y - c.InteractiveElement.Area.Rect().Min.Y
 	return layout.Dimensions{
 		Size: image.Point{
-			X: gtx.Px(unit.Px(c.InteractiveElement.Area.Rect().Max.X - c.InteractiveElement.Area.Rect().Min.X)),
-			Y: gtx.Px(unit.Px(c.InteractiveElement.Area.Rect().Max.Y - c.InteractiveElement.Area.Rect().Min.Y)),
+			X: gtx.Px(unit.Dp(width)),
+			Y: gtx.Px(unit.Dp(height)),
 		},
 	}, err
 }

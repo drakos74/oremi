@@ -3,8 +3,6 @@ package style
 import (
 	"image/color"
 
-	"gioui.org/font/gofont"
-
 	"github.com/drakos74/oremi/internal/gui"
 	"github.com/drakos74/oremi/internal/gui/canvas"
 
@@ -40,18 +38,17 @@ func NewCheckBox(label string, active bool, color color.RGBA) *CheckboxControl {
 	return cb
 }
 
-func (c *CheckboxControl) Draw(gtx *layout.Context, th *material.Theme) error {
+func (c *CheckboxControl) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
+	dim := material.CheckBox(th, c.checkbox, c.label).Layout(gtx)
 	if c.enabled {
-		theme := material.NewTheme(gofont.Collection())
-		theme.Color.Text = c.color
-		//theme.(c.label).Layout(gtx, c.checkbox)
+		return dim, nil
 	}
 	active := c.active
 	c.active = c.checkbox.Value
 	if c.active != active {
 		c.trigger <- canvas.Event{canvas.Trigger, c.active, ""}
 	}
-	return nil
+	return dim, nil
 }
 
 func (c *CheckboxControl) Disable() {

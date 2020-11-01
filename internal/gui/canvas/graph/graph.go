@@ -48,7 +48,6 @@ type collection struct {
 
 // NewChart creates a new graph
 func NewChart(labels []label.Label, rect *f32.Rectangle) *Chart {
-
 	if len(labels) < 2 {
 		log.Fatalf("cannot draw 2-d graph with only one dimension: %v", labels)
 	}
@@ -57,6 +56,7 @@ func NewChart(labels []label.Label, rect *f32.Rectangle) *Chart {
 		Min: math.NewV(rect.Min.X, rect.Min.Y),
 		Max: math.NewV(rect.Max.X, rect.Max.Y),
 	}, scale)
+
 	dataCoordinates := math.NewMonotonicMapper(scale)
 
 	g := &Chart{

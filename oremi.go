@@ -45,11 +45,11 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 
 	scene := gui.New().
 		WithTitle(title).
-		WithDimensions(width+(float32(cs)*(gui.Inset+10)), height+(float32(cs)*(gui.Inset+10)))
+		WithDimensions(width /*+(float32(cs)*(gui.Inset+10))*/, height /*+(float32(cs)*(gui.Inset+10))*/)
 
 	// TODO : fix the layout and collection widths/heights properly
-	w := 2*width - 600
-	h := 2*height - 50
+	w := width
+	h := height
 
 	switch axis {
 	case layout.Horizontal:
@@ -58,14 +58,14 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 		h = h / float32(cs)
 	}
 
-	graphView := gui.NewView(axis)
+	graphView := gui.NewView(axis) //.WithMaxWidth(w).WithMaxHeight(h)
 
 	i := 0
 	controllers := make([]canvas.Control, 0)
 	for title, cc := range collection {
 		g := f32.Rectangle{
 			Min: f32.Point{X: gui.Inset, Y: gui.Inset},
-			Max: f32.Point{X: w, Y: h},
+			Max: f32.Point{X: w - 300, Y: h},
 		}
 
 		c, l := filterCollections(cc, datamodel.Size)
@@ -76,7 +76,6 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 				// TODO : unify building of controls with the collection call
 				controller := graph.AddCollection(fmt.Sprintf("%s-%s", title, subtitle), uimodel.NewSeries(c.Collection, *c.style), true)
 				controllers = append(controllers, controller)
-
 			}
 			graphView.Add(graph)
 			i++
@@ -121,15 +120,15 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 
 	}()
 
-	autoSuggest := gui.NewView(layout.Vertical).WithMaxHeight(30)
+	autoSuggest := gui.NewView(layout.Vertical) //.WithMaxHeight(30).WithMaxWidth(100)
 	autoSuggest.Add(autoSuggestInput)
 
 	controllerView := gui.NewView(layout.Vertical)
 	controllerView.Add(autoSuggest)
-	controlView := gui.NewView(layout.Vertical).WithMaxHeight(height + gui.Inset)
+	controlView := gui.NewView(layout.Vertical) //.WithMaxHeight(height + gui.Inset).WithMaxWidth(200)
 	controllerView.Add(controlView)
 
-	screenView := gui.NewView(layout.Horizontal).WithMaxHeight(height + gui.Inset)
+	screenView := gui.NewView(layout.Horizontal) //.WithMaxHeight(height + gui.Inset)
 
 	group := style.NewCheckboxControlGroup(true, controllers...)
 	controlView.Add(group)
@@ -140,7 +139,6 @@ func Draw(title string, axis layout.Axis, width, height float32, collection map[
 
 	screenView.Add(graphView, controllerView)
 
-	println(fmt.Sprintf("screenView = %+v", screenView))
 	scene.Add(screenView)
 
 	scene.Run()

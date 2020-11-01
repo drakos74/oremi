@@ -1,15 +1,11 @@
 package gui
 
 import (
-	"image"
 	"image/color"
 
 	"gioui.org/io/pointer"
-
-	"gioui.org/f32"
-	"gioui.org/op/paint"
-
 	"gioui.org/unit"
+	"gioui.org/widget"
 
 	"gioui.org/layout"
 	"gioui.org/widget/material"
@@ -36,63 +32,20 @@ func NewView(orientation layout.Axis) *View {
 
 func (v *View) Draw(gtx layout.Context, th *material.Theme) (layout.Dimensions, error) {
 	//TODO : do recover
-
-	children := make([]layout.FlexChild, len(v.items))
-
+	children := make([]layout.Widget, len(v.items))
+	// generate a widget for each item
 	for i := 0; i < len(v.items); i++ {
-		children[i] = layout.Rigid(func(j int) layout.Widget {
-			item := v.get(j)
-			d := layout.Dimensions{}
-			//if v, ok := item.(View); ok {
-			//	d = layout.Dimensions{
-			//		Size: image.Point{
-			//			X: gtx.Px(unit.Dp(v.width)),
-			//			Y: gtx.Px(unit.Dp(v.height)),
-			//		},
-			//	}
-			//}
-			return func(gtx layout.Context) layout.Dimensions {
-				layout.UniformInset(unit.Dp(0)).Layout(gtx, item.draw(gtx, th))
-				return d
-			}
-		}(i))
+		children[i] = func(j int) layout.Widget {
+			return v.get(j).draw(gtx, th)
+		}(i)
 	}
-
-	layout.Flex{Alignment: layout.Start}.Layout(gtx, children...)
-
-	list := &layout.List{
-		Axis: layout.Vertical,
-	}
-
-	widgets := []layout.Widget{
-		func(gtx layout.Context) layout.Dimensions {
-			paint.ColorOp{Color: color.RGBA{127, 0, 0, 255}}.Add(gtx.Ops)
-			paint.PaintOp{Rect: f32.Rect(0, 0, 100, 100)}.Add(gtx.Ops)
-			paint.ColorOp{Color: color.RGBA{0, 127, 0, 255}}.Add(gtx.Ops)
-			paint.PaintOp{Rect: f32.Rect(50, 50, 150, 150)}.Add(gtx.Ops)
-
-			return layout.Dimensions{
-				//Size: image.Point{
-				//	X: 150,
-				//	Y: 150,
-				//},
-			}
-		},
-	}
-
-	list.Layout(gtx, len(widgets), func(gtx layout.Context, i int) layout.Dimensions {
-		return layout.UniformInset(unit.Dp(0)).Layout(gtx, widgets[i])
-	})
-
-	//v.Layout(gtx, len(v.items), func(gtx layout.Context, i int) layout.Dimensions {
-	//	return layout.UniformInset(unit.Dp(0)).Layout(gtx, v.get(i).draw(gtx, th))
-	//})
-	return layout.Dimensions{
-		Size: image.Point{
-			X: gtx.Px(unit.Dp(v.width)),
-			Y: gtx.Px(unit.Dp(v.height)),
-		},
-	}, nil
+	// draw the widgets in a list.
+	border := widget.Border{Color: color.RGBA{A: 0xff}, Width: unit.Px(1)}
+	return border.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+		return v.List.Layout(gtx, len(children), func(gtx layout.Context, i int) layout.Dimensions {
+			return children[i](gtx)
+		})
+	}), nil
 }
 
 func (v *View) Event(e *pointer.Event) (redraw bool, err error) {
