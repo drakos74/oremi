@@ -7,6 +7,19 @@ import (
 	"github.com/drakos74/oremi/label"
 )
 
+type EventType int
+
+const (
+	Added EventType = iota + 1
+	Removed
+)
+
+type Event struct {
+	T EventType
+	A bool
+	S string
+}
+
 // TODO : unify with math package
 
 // Vector defines a point in n dimensional space
@@ -62,6 +75,7 @@ type Collection interface {
 	Size() int
 	Edge() (min, max Vector)
 	Labels() []label.Label
+	Events() <-chan Event
 }
 
 // TODO : consider removing this abstraction (see usages)

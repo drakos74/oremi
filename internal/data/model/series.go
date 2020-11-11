@@ -16,6 +16,7 @@ type Series struct {
 	min     Vector
 	max     Vector
 	labels  []label.Label
+	events  chan Event
 }
 
 // NewSeries creates a new series of the specified dimension
@@ -31,7 +32,12 @@ func NewSeries(labels ...label.Label) *Series {
 		min:     NewVector([]string{"min"}, min...),
 		max:     NewVector([]string{"max"}, make([]float64, dim)...),
 		labels:  labels,
+		events:  make(chan Event, 100),
 	}
+}
+
+func (s *Series) Events() <-chan Event {
+	return s.events
 }
 
 // Reset resets the iterator to the start of the collection
@@ -71,6 +77,11 @@ func (s *Series) Add(vector Vector) {
 		if c > s.max.Coords[i] {
 			s.max.Coords[i] = c
 		}
+	}
+	s.events <- Event{
+		T: Added,
+		A: true,
+		S: fmt.Sprintf("%+v", vector),
 	}
 }
 

@@ -186,9 +186,20 @@ func (area *RawArea) Size(inset int) image.Point {
 	}
 }
 
+const ff = 1
+
 // ID returns the id of the raw element
 func (area *RawArea) Rect() f32.Rectangle {
-	return *area.rect
+	return f32.Rectangle{
+		Min: f32.Point{
+			X: ff * area.rect.Min.X,
+			Y: ff * area.rect.Min.Y,
+		},
+		Max: f32.Point{
+			X: ff * area.rect.Max.X,
+			Y: ff * area.rect.Max.Y,
+		},
+	}
 }
 
 // Rect creates a new raw element

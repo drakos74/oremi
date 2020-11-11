@@ -23,6 +23,7 @@ type Collection interface {
 	Reset()
 	Labels() []label.Label
 	Style() style.Properties
+	Events() <-chan model.Event
 }
 
 type Series struct {

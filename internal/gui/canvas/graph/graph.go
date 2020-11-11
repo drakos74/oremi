@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	datamodel "github.com/drakos74/oremi/internal/data/model"
+
 	"github.com/drakos74/oremi/internal/gui/canvas"
 	"github.com/drakos74/oremi/internal/gui/model"
 	"github.com/drakos74/oremi/internal/gui/style"
@@ -240,6 +242,20 @@ func (g *Chart) AddCollection(title string, col model.Collection, active bool) c
 			})
 		}
 
+	}()
+
+	// catch events from the collection to refresh the view
+	go func() {
+		for event := range col.Events() {
+			// TODO : add event buffer
+			println(fmt.Sprintf("event = %v", event))
+			switch event.T {
+			case datamodel.Added:
+				g.Refresh()
+			default:
+				println(fmt.Sprintf("event = %v", event))
+			}
+		}
 	}()
 
 	return controller

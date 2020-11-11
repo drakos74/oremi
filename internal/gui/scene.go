@@ -68,6 +68,8 @@ func loop(scene *Scene, w *app.Window) error {
 		case system.DestroyEvent:
 			return e.Err
 		case system.FrameEvent:
+			// TODO : find a smarter way to 'invalidate'
+			w.Invalidate()
 			gtx := layout.NewContext(&ops, e)
 			// TODO : avoid re-drawing if nothing changed
 			_, err := scene.Draw(gtx, th)
@@ -79,15 +81,15 @@ func loop(scene *Scene, w *app.Window) error {
 			e.Frame(gtx.Ops)
 		case pointer.Event:
 			// TODO : dont make use of gtx from this scope
-			redraw, err := scene.Event(&e)
-			if err != nil {
-				// TODO : handle error so that it ignores instead of failing
-				// consider using custom error type
-				log.Fatalf("could not draw scene: %v", err)
-			}
-			if redraw {
-				w.Invalidate()
-			}
+			//redraw, err := scene.Event(&e)
+			//if err != nil {
+			//	// TODO : handle error so that it ignores instead of failing
+			//	// consider using custom error type
+			//	log.Fatalf("could not draw scene: %v", err)
+			//}
+			//if redraw {
+			//	w.Invalidate()
+			//}
 			//default:
 			//	println(fmt.Sprintf("e = %+v", e))
 		}
