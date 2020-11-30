@@ -78,11 +78,16 @@ func (s *Series) Add(vector Vector) {
 			s.max.Coords[i] = c
 		}
 	}
-	s.events <- Event{
+	select {
+	case s.events <- Event{
 		T: Added,
 		A: true,
 		S: fmt.Sprintf("%+v", vector),
+	}:
+	default:
+		// nothing to do
 	}
+
 }
 
 // Edge returns the edge values of the series

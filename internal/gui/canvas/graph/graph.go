@@ -176,8 +176,8 @@ func (g *Chart) AxisY(label label.Label) (*Axis, []*Delimiter) {
 
 // model validation methods
 func (g *Chart) fitsModel(collection model.Collection) error {
-	for i, label := range collection.Labels() {
-		if g.labels[i].Name() != label.Name() {
+	for i, lbl := range collection.Labels() {
+		if g.labels[i].Name() != lbl.Name() {
 			return fmt.Errorf("model inconsistency on labels %v vs %v", g.labels, collection.Labels())
 		}
 	}
@@ -188,6 +188,7 @@ func (g *Chart) fitsModel(collection model.Collection) error {
 
 // AddCollection adds a series model collection to the graph
 func (g *Chart) AddCollection(title string, col model.Collection, active bool) canvas.Control {
+	println(fmt.Sprintf("col = %v", col))
 	err := g.fitsModel(col)
 	if err != nil {
 		log.Fatalf("cannot add collection to graph: %v", err)
@@ -246,14 +247,20 @@ func (g *Chart) AddCollection(title string, col model.Collection, active bool) c
 
 	// catch events from the collection to refresh the view
 	go func() {
+		var trigger bool
 		for event := range col.Events() {
 			// TODO : add event buffer
-			println(fmt.Sprintf("event = %v", event))
 			switch event.T {
 			case datamodel.Added:
-				g.Refresh()
+				if !trigger {
+					time.AfterFunc(10*time.Millisecond, func() {
+						g.Refresh()
+						trigger = false
+					})
+					trigger = true
+				}
 			default:
-				println(fmt.Sprintf("event = %v", event))
+				println(fmt.Sprintf("unknown event = %v", event))
 			}
 		}
 	}()

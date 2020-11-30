@@ -148,11 +148,12 @@ func filterCollections(collections map[string]Collection, filter datamodel.Filte
 	cc := make(map[string]Collection)
 	var labels []label.Label
 	for key, collection := range collections {
-		if filter(collection) {
-			cc[key] = collection
-			// TODO : be more strict on the labels
-			labels = collection.Labels()
-		}
+		// TODO : we need to remove this filter taking into account the strwaming collection case
+		//if filter(collection) {
+		cc[key] = collection
+		// TODO : be more strict on the labels
+		labels = collection.Labels()
+		//}
 	}
 	return cc, labels
 }

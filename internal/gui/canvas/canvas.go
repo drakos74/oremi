@@ -2,6 +2,7 @@ package canvas
 
 import (
 	"image/color"
+	"sync"
 
 	"github.com/drakos74/oremi/internal/gui"
 
@@ -85,6 +86,7 @@ type CompoundElement interface {
 
 // RawCompundElement is the base implementation for a compund element
 type RawCompoundElement struct {
+	lock     *sync.RWMutex
 	elements map[uint32]gui.Item
 	controls map[uint32]Control
 }
@@ -92,6 +94,7 @@ type RawCompoundElement struct {
 // NewCompoundElement creates a new compound element
 func NewCompoundElement() *RawCompoundElement {
 	return &RawCompoundElement{
+		lock:     new(sync.RWMutex),
 		elements: make(map[uint32]gui.Item),
 		controls: make(map[uint32]Control),
 	}
@@ -99,6 +102,8 @@ func NewCompoundElement() *RawCompoundElement {
 
 // Add adds a new element to the group
 func (s *RawCompoundElement) Add(element gui.Item, controller Control) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.elements[element.ID()] = element
 	if controller == nil {
 		controller = &ActiveController{}
@@ -108,6 +113,8 @@ func (s *RawCompoundElement) Add(element gui.Item, controller Control) {
 
 // Elements applies the specified action to all child elements
 func (s *RawCompoundElement) Elements(gtx layout.Context, apply ...Action) (bool, error) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 	var d bool
 	for id, e := range s.elements {
 		// propagate events only for child elements that are active
@@ -129,6 +136,8 @@ func (s *RawCompoundElement) Elements(gtx layout.Context, apply ...Action) (bool
 
 // Remove removes an element by id from the group
 func (s *RawCompoundElement) Remove(id uint32) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	delete(s.elements, id)
 }
 
