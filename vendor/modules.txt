@@ -1,6 +1,6 @@
 # gioui.org v0.0.0-20201022165755-672555d3d076
+## explicit
 gioui.org/app
-gioui.org/app/headless
 gioui.org/app/internal/cocoainit
 gioui.org/app/internal/d3d11
 gioui.org/app/internal/egl
@@ -36,20 +36,27 @@ gioui.org/text
 gioui.org/unit
 gioui.org/widget
 gioui.org/widget/material
+# github.com/datadotworld/dwapi-go v0.2.0
+## explicit
+github.com/datadotworld/dwapi-go/dwapi
 # github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew
 # github.com/gocarina/gocsv v0.0.0-20200330101823-46266ca37bd3
+## explicit
 github.com/gocarina/gocsv
 # github.com/google/uuid v1.1.1
+## explicit
 github.com/google/uuid
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/rs/zerolog v1.19.0
+## explicit
 github.com/rs/zerolog
 github.com/rs/zerolog/internal/cbor
 github.com/rs/zerolog/internal/json
 github.com/rs/zerolog/log
 # github.com/stretchr/testify v1.5.1
+## explicit
 github.com/stretchr/testify/assert
 # golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3
 golang.org/x/exp/shiny/iconvg
